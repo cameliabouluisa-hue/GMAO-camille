@@ -1,0 +1,99 @@
+[
+  {
+    "key": "POINT_STRUCTURE-1",
+    "id": 1,
+    "type": "POINT_STRUCTURE",
+    "code": "GEO-001",
+    "libelle": "Port",
+    "typePoint": "GEOGRAPHIQUE",
+    "children": [
+      {
+        "key": "POINT_STRUCTURE-2",
+        "id": 2,
+        "type": "POINT_STRUCTURE",
+        "code": "TEC-001",
+        "libelle": "Atelier maintenance",
+        "typePoint": "TECHNIQUE",
+        "children": [
+          {
+            "key": "POINT_STRUCTURE-3",
+            "id": 3,
+            "type": "POINT_STRUCTURE",
+            "code": "TEC-002",
+            "libelle": "Zone compresseurs",
+            "typePoint": "TECHNIQUE",
+            "children": [
+              {
+                "key": "MATERIEL-8",
+                "id": 8,
+                "type": "MATERIEL",
+                "code": "MAT-005",
+                "libelle": "SN-POMP-0001",
+                "children": [
+                  {
+                    "key": "MATERIEL-9",
+                    "id": 9,
+                    "type": "MATERIEL",
+                    "code": "MAT-006",
+                    "libelle": "SN-MOT-0002",
+                    "children": []
+                  },
+                  {
+                    "key": "MATERIEL-10",
+                    "id": 10,
+                    "type": "MATERIEL",
+                    "code": "MAT-007",
+                    "libelle": "SN-CAPT-0002",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "key": "MATERIEL-4",
+            "id": 4,
+            "type": "MATERIEL",
+            "code": "MAT-001",
+            "libelle": "SN-COMP-0001",
+            "children": [
+              {
+                "key": "MATERIEL-5",
+                "id": 5,
+                "type": "MATERIEL",
+                "code": "MAT-002",
+                "libelle": "SN-MOT-0001",
+                "children": []
+              },
+              {
+                "key": "MATERIEL-6",
+                "id": 6,
+                "type": "MATERIEL",
+                "code": "MAT-003",
+                "libelle": "SN-CAPT-0001",
+                "children": []
+              },
+              {
+                "key": "MATERIEL-7",
+                "id": 7,
+                "type": "MATERIEL",
+                "code": "MAT-004",
+                "libelle": "SN-VENT-0001",
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "POINT_STRUCTURE-4",
+        "id": 4,
+        "type": "POINT_STRUCTURE",
+        "code": "GEO-002",
+        "libelle": "Quai principal",
+        "typePoint": "GEOGRAPHIQUE",
+        "children": []
+      }
+    ]
+  }
+]

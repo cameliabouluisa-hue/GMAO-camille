@@ -1,0 +1,1348 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model affectation_technicien {
+  idAffectation   Int           @id @default(autoincrement())
+  tempsTravail    Int?
+  idTechnicien    Int?
+  idIntervention  Int?
+  dateAffectation DateTime?     @default(now()) @db.DateTime(0)
+  affectePar      String?       @db.VarChar(100)
+  technicien      technicien?   @relation(fields: [idTechnicien], references: [idTechnicien], onDelete: Restrict, onUpdate: Restrict, map: "affectation_technicien_ibfk_1")
+  intervention    intervention? @relation(fields: [idIntervention], references: [idIntervention], onDelete: Restrict, onUpdate: Restrict, map: "affectation_technicien_ibfk_2")
+
+  @@index([idIntervention], map: "idIntervention")
+  @@index([idTechnicien], map: "idTechnicien")
+}
+
+model article {
+  idArticle                  Int                             @id @default(autoincrement())
+  reference                  String?                         @unique @db.VarChar(50)
+  designation                String?                         @db.VarChar(150)
+  description                String?                         @db.Text
+  idFamille                  Int?
+  idUniteArticle             Int?
+  gereEnStock                Boolean                         @default(true)
+  serialise                  Boolean                         @default(false)
+  reparable                  Boolean                         @default(false)
+  actif                      Boolean                         @default(true)
+  createdAt                  DateTime                        @default(now())
+  updatedAt                  DateTime                        @default(now()) @updatedAt
+  categorie                  CategorieArticle?               @default(PIECE_RECHANGE)
+  codeBarres                 String?                         @db.VarChar(100)
+  createdBy                  String?                         @db.VarChar(100)
+  estModele                  Boolean                         @default(false)
+  prixMoyenPondere           Decimal?                        @db.Decimal(10, 2)
+  referenceFabricant         String?                         @db.VarChar(100)
+  updatedBy                  String?                         @db.VarChar(100)
+  budget                     String?                         @db.VarChar(100)
+  centreCout                 String?                         @db.VarChar(100)
+  codeComptable              String?                         @db.VarChar(100)
+  etatArticle                String                          @default("ACTIF") @db.VarChar(30)
+  fabricantArticle           String?                         @db.VarChar(150)
+  fournisseurPrincipal       String?                         @db.VarChar(150)
+  natureAchat                String?                         @db.VarChar(100)
+  nbDecimales                Int                             @default(0)
+  prixStandard               Decimal?                        @db.Decimal(10, 2)
+  taxe                       String?                         @db.VarChar(50)
+  gereParLot                 Boolean                         @default(false)
+  idModele                   Int?
+  prixUnitaire               Decimal?                        @db.Decimal(10, 2)
+  famille                    famille?                        @relation(fields: [idFamille], references: [idFamille], onUpdate: Restrict)
+  uniteArticle               unite_article?                  @relation(fields: [idUniteArticle], references: [idUniteArticle], onUpdate: Restrict)
+  consommations              consommation[]
+  lignesEntreeStock          entree_stock_ligne[]
+  fournituresIntervention    fourniture_intervention[]
+  lignesDemandesTransfert    ligne_demande_transfert_stock[]
+  lignesInventairePrepare    LigneInventairePrepare[]
+  lignes_reapprovisionnement ligne_reapprovisionnement[]     @relation("ArticleLignesReapprovisionnement")
+  modeleEquipement           modele?                         @relation("ArticleModele")
+  mouvementsStock            mouvement_stock[]
+  reservationsStock          reservation_stock[]
+  lignesSortieStock          sortie_stock_ligne[]
+  stocks                     stock_article_magasin[]
+
+  @@index([idFamille])
+  @@index([idUniteArticle])
+  @@index([idModele])
+  @@index([categorie])
+  @@index([etatArticle])
+  @@index([estModele])
+  @@index([gereEnStock])
+  @@index([serialise])
+  @@index([actif])
+}
+
+model consommation {
+  idConsommation     Int                 @id @default(autoincrement())
+  quantite           Decimal             @db.Decimal(10, 2)
+  coutTotal          Decimal?            @db.Decimal(10, 2)
+  idArticle          Int
+  idIntervention     Int
+  cancelledAt        DateTime?
+  cancelledBy        String?             @db.VarChar(100)
+  commentaire        String?             @db.Text
+  createdAt          DateTime            @default(now())
+  createdBy          String?             @db.VarChar(100)
+  idMagasin          Int?
+  idSortieStockLigne Int?
+  motifAnnulation    String?             @db.Text
+  prixUnitaire       Decimal?            @db.Decimal(10, 2)
+  quantiteRetournee  Decimal             @default(0.00) @db.Decimal(10, 2)
+  statut             String              @default("ACTIVE") @db.VarChar(30)
+  updatedAt          DateTime            @updatedAt
+  article            article             @relation(fields: [idArticle], references: [idArticle])
+  intervention       intervention        @relation(fields: [idIntervention], references: [idIntervention])
+  magasin            magasin?            @relation(fields: [idMagasin], references: [idMagasin])
+  sortieStockLigne   sortie_stock_ligne? @relation(fields: [idSortieStockLigne], references: [idLigneSortieStock])
+
+  @@index([idArticle])
+  @@index([idIntervention])
+  @@index([idMagasin])
+  @@index([idSortieStockLigne])
+  @@index([statut])
+}
+
+model unite_article {
+  idUniteArticle Int       @id @default(autoincrement())
+  code           String    @unique @db.VarChar(20)
+  libelle        String    @db.VarChar(100)
+  articles       article[]
+
+  @@map("unite_article")
+}
+
+model demande_intervention {
+  idDemande            Int                                    @id @default(autoincrement())
+  dateDemande          DateTime?                              @db.DateTime(0)
+  description          String?                                @db.Text
+  statut               String?                                @default("EN_PREPARATION") @db.VarChar(50)
+  idMateriel           Int?
+  createdBy            String?                                @db.VarChar(100)
+  dateValidation       DateTime?                              @db.DateTime(0)
+  motifRefus           String?                                @db.Text
+  priorite             String?                                @default("NORMALE") @db.VarChar(30)
+  validatedBy          String?                                @db.VarChar(100)
+  code                 String?                                @unique @db.VarChar(50)
+  createdAt            DateTime                               @default(now()) @db.DateTime(0)
+  criticite            String?                                @default("MOYENNE") @db.VarChar(30)
+  dateReceptionTravaux DateTime?                              @db.DateTime(0)
+  dateSoumission       DateTime?                              @db.DateTime(0)
+  demandeur            String?                                @db.VarChar(100)
+  materielEnPanne      Boolean                                @default(false)
+  materielIndisponible Boolean                                @default(false)
+  motifRefusTravaux    String?                                @db.Text
+  receptionBy          String?                                @db.VarChar(100)
+  receptionTravaux     Boolean                                @default(false)
+  updatedAt            DateTime                               @default(now()) @updatedAt @db.DateTime(0)
+  materiel             materiel?                              @relation(fields: [idMateriel], references: [idMateriel], onDelete: Restrict, onUpdate: Restrict, map: "demande_intervention_ibfk_1")
+  historiquesEtat      historique_etat_demande_intervention[]
+  intervention         intervention[]
+
+  @@index([idMateriel], map: "idMateriel")
+  @@index([statut])
+  @@index([priorite])
+}
+
+model etat_materiel {
+  idEtat   Int        @id @default(autoincrement())
+  libelle  String?    @db.VarChar(100)
+  code     String?    @unique @db.VarChar(50)
+  materiel materiel[]
+}
+
+model etat_modele {
+  idEtat  Int      @id
+  libelle String?  @db.VarChar(100)
+  modele  modele[]
+}
+
+model famille {
+  idFamille                  Int                          @id @default(autoincrement())
+  code                       String?                      @db.VarChar(50)
+  libelle                    String?                      @db.VarChar(100)
+  parent_id                  Int?
+  actif                      Boolean                      @default(true)
+  natureAchat                NatureAchatFamille?
+  typeFamille                TypeFamille                  @default(EQUIPEMENT)
+  articles                   article[]
+  famille                    famille?                     @relation("familleTofamille", fields: [parent_id], references: [idFamille])
+  other_famille              famille[]                    @relation("familleTofamille")
+  modele                     modele[]
+  plan_preventif_declencheur plan_preventif_declencheur[]
+
+  @@index([parent_id], map: "famille_ibfk_parent")
+}
+
+model gamme {
+  idGamme                    Int                          @id @default(autoincrement())
+  code                       String?                      @db.VarChar(50)
+  libelle                    String?                      @db.VarChar(100)
+  typeMaintenance            String?                      @db.VarChar(50)
+  actif                      Boolean?
+  idModele                   Int?
+  idMateriel                 Int?
+  chargePrevue               Decimal?                     @db.Decimal(10, 2)
+  etat                       String?                      @db.VarChar(50)
+  jourFin                    Int?
+  organisation               String?                      @db.VarChar(50)
+  receptionTravaux           Boolean?                     @default(false)
+  tempsArret                 Decimal?                     @db.Decimal(10, 2)
+  materiel                   materiel?                    @relation(fields: [idMateriel], references: [idMateriel], map: "fk_gamme_materiel")
+  modele                     modele?                      @relation(fields: [idModele], references: [idModele], onDelete: Restrict, onUpdate: Restrict, map: "gamme_ibfk_1")
+  gamme_operation            gamme_operation[]
+  intervention               intervention[]
+  plan_preventif_declencheur plan_preventif_declencheur[]
+  ppp_declencheur            ppp_declencheur[]
+
+  @@index([idModele], map: "idModele")
+  @@index([idMateriel], map: "idx_gamme_idMateriel")
+}
+
+model gamme_operation {
+  idOperation            Int                      @id @default(autoincrement())
+  ordre                  Int?
+  libelle                String?                  @db.VarChar(100)
+  tempsStandard          Int?
+  idGamme                Int?
+  description            String?                  @db.Text
+  idMateriel             Int?
+  idModele               Int?
+  idPointStructure       Int?
+  obligatoire            Boolean?                 @default(false)
+  gamme                  gamme?                   @relation(fields: [idGamme], references: [idGamme], onDelete: Restrict, onUpdate: Restrict, map: "gamme_operation_ibfk_1")
+  materiel               materiel?                @relation("GammeOperationMateriel", fields: [idMateriel], references: [idMateriel])
+  modele                 modele?                  @relation("GammeOperationModele", fields: [idModele], references: [idModele])
+  point_structure        point_structure?         @relation("GammeOperationPointStructure", fields: [idPointStructure], references: [idPoint])
+  operation_intervention operation_intervention[]
+
+  @@index([idGamme], map: "idGamme")
+  @@index([idPointStructure])
+  @@index([idMateriel])
+  @@index([idModele])
+}
+
+model intervention {
+  idIntervention                     Int                                  @id @default(autoincrement())
+  code                               String?                              @unique @db.VarChar(50)
+  typeMaintenance                    String?                              @db.VarChar(50)
+  dateDebut                          DateTime?                            @db.DateTime(0)
+  dateFin                            DateTime?                            @db.DateTime(0)
+  etat                               String?                              @default("EN_PREPARATION") @db.VarChar(50)
+  idMateriel                         Int?
+  idDemande                          Int?
+  idGamme                            Int?
+  assignedBy                         String?                              @db.VarChar(100)
+  closedBy                           String?                              @db.VarChar(100)
+  createdBy                          String?                              @db.VarChar(100)
+  dateAffectation                    DateTime?                            @db.DateTime(0)
+  dateCloture                        DateTime?                            @db.DateTime(0)
+  dateValidation                     DateTime?                            @db.DateTime(0)
+  description                        String?                              @db.Text
+  idEquipe                           Int?
+  idPlanPreventif                    Int?
+  idPlanPreventifDeclencheur         Int?
+  origineGeneration                  String?                              @db.VarChar(50)
+  priorite                           String?                              @default("NORMALE") @db.VarChar(30)
+  validatedBy                        String?                              @db.VarChar(100)
+  aPlanifier                         Boolean                              @default(false)
+  archivedBy                         String?                              @db.VarChar(100)
+  arretMateriel                      Boolean                              @default(false)
+  arretProduction                    Boolean                              @default(false)
+  cancelledBy                        String?                              @db.VarChar(100)
+  cause                              String?                              @db.VarChar(150)
+  centreCout                         String?                              @db.VarChar(50)
+  chargePrevue                       Decimal?                             @db.Decimal(10, 2)
+  chargePrevueMoyens                 Decimal?                             @db.Decimal(10, 2)
+  chargeReelle                       Decimal?                             @db.Decimal(10, 2)
+  chargeReelleMoyens                 Decimal?                             @db.Decimal(10, 2)
+  chargeRevisee                      Decimal?                             @db.Decimal(10, 2)
+  chargeReviseeMoyens                Decimal?                             @db.Decimal(10, 2)
+  commentairePlanification           String?                              @db.Text
+  commentairePriseEnCompte           String?                              @db.Text
+  commentaireRealisation             String?                              @db.Text
+  consignationRequise                Boolean                              @default(false)
+  contrat                            String?                              @db.VarChar(100)
+  coutMainOeuvrePrevu                Decimal?                             @db.Decimal(10, 2)
+  coutMainOeuvreReel                 Decimal?                             @db.Decimal(10, 2)
+  coutMainOeuvreRevise               Decimal?                             @db.Decimal(10, 2)
+  coutMoyensPrevu                    Decimal?                             @db.Decimal(10, 2)
+  coutMoyensReel                     Decimal?                             @db.Decimal(10, 2)
+  coutMoyensRevise                   Decimal?                             @db.Decimal(10, 2)
+  coutPiecesPrevu                    Decimal?                             @db.Decimal(10, 2)
+  coutPiecesReel                     Decimal?                             @db.Decimal(10, 2)
+  coutPiecesRevise                   Decimal?                             @db.Decimal(10, 2)
+  coutSousTraitancePrevu             Decimal?                             @db.Decimal(10, 2)
+  coutSousTraitanceReel              Decimal?                             @db.Decimal(10, 2)
+  coutSousTraitanceRevise            Decimal?                             @db.Decimal(10, 2)
+  coutTotalPrevu                     Decimal?                             @db.Decimal(10, 2)
+  coutTotalReel                      Decimal?                             @db.Decimal(10, 2)
+  coutTotalRevise                    Decimal?                             @db.Decimal(10, 2)
+  createdAt                          DateTime                             @default(now())
+  criticite                          String?                              @default("MOYENNE") @db.VarChar(30)
+  dateAnnulation                     DateTime?                            @db.DateTime(0)
+  dateArchivage                      DateTime?                            @db.DateTime(0)
+  dateDebutPrevue                    DateTime?                            @db.DateTime(0)
+  dateDebutReelle                    DateTime?                            @db.DateTime(0)
+  dateFinPrevue                      DateTime?                            @db.DateTime(0)
+  dateFinReelle                      DateTime?                            @db.DateTime(0)
+  dateFixe                           Boolean                              @default(false)
+  dateLimite                         DateTime?                            @db.DateTime(0)
+  dateReceptionTravaux               DateTime?                            @db.DateTime(0)
+  dateReport                         DateTime?                            @db.DateTime(0)
+  dateSouhaiteeFin                   DateTime?                            @db.DateTime(0)
+  diagnosticInitial                  String?                              @db.Text
+  dureePrevue                        Decimal?                             @db.Decimal(10, 2)
+  dureeReelle                        Decimal?                             @db.Decimal(10, 2)
+  garantie                           String?                              @db.VarChar(100)
+  horsForfait                        Boolean                              @default(false)
+  horsGarantie                       Boolean                              @default(false)
+  idInterventionParent               Int?
+  idPointMesure                      Int?
+  idPointStructure                   Int?
+  idReleveMesure                     Int?
+  impactProduction                   String?                              @db.VarChar(100)
+  instructions                       String?                              @db.Text
+  instructionsSecurite               String?                              @db.Text
+  libelle                            String?                              @db.VarChar(150)
+  materielEnPanne                    Boolean                              @default(false)
+  materielIndisponible               Boolean                              @default(false)
+  motifAnnulation                    String?                              @db.Text
+  motifMiseEnAttente                 String?                              @db.Text
+  motifRefusTravaux                  String?                              @db.Text
+  motifReport                        String?                              @db.Text
+  natureIntervention                 String?                              @db.VarChar(80)
+  niveauMaintenance                  String?                              @db.VarChar(30)
+  periodeContrat                     String?                              @db.VarChar(100)
+  permisTravailRequis                Boolean                              @default(false)
+  plannedBy                          String?                              @db.VarChar(100)
+  prestataire                        String?                              @db.VarChar(150)
+  receptionBy                        String?                              @db.VarChar(100)
+  receptionTravaux                   Boolean                              @default(false)
+  remede                             String?                              @db.VarChar(150)
+  reportedBy                         String?                              @db.VarChar(100)
+  startedBy                          String?                              @db.VarChar(100)
+  symptome                           String?                              @db.VarChar(150)
+  tempsArretPrevu                    Decimal?                             @db.Decimal(10, 2)
+  tempsArretReel                     Decimal?                             @db.Decimal(10, 2)
+  typeIntervention                   String?                              @db.VarChar(50)
+  updatedAt                          DateTime                             @default(now()) @updatedAt @db.DateTime(0)
+  valeurMesureActuelle               Decimal?                             @db.Decimal(12, 2)
+  adresses                           adresse_intervention[]
+  affectation_technicien             affectation_technicien[]
+  anomaliesDetectees                 anomalie_intervention[]              @relation("InterventionOrigineAnomalie")
+  anomaliesSuivies                   anomalie_intervention[]              @relation("InterventionSuiviAnomalie")
+  compteRendu                        compte_rendu_intervention?
+  consommations                      consommation[]
+  fournitures                        fourniture_intervention[]
+  historique_declenchement_preventif historique_declenchement_preventif[]
+  historiquesEtat                    historique_etat_intervention[]
+  materiel                           materiel?                            @relation(fields: [idMateriel], references: [idMateriel], onDelete: Restrict, onUpdate: Restrict, map: "intervention_ibfk_1")
+  demande_intervention               demande_intervention?                @relation(fields: [idDemande], references: [idDemande], onDelete: Restrict, onUpdate: Restrict, map: "intervention_ibfk_2")
+  gamme                              gamme?                               @relation(fields: [idGamme], references: [idGamme], onDelete: Restrict, onUpdate: Restrict, map: "intervention_ibfk_3")
+  equipe_maintenance                 equipe_maintenance?                  @relation(fields: [idEquipe], references: [idEquipe], onDelete: Restrict, onUpdate: Restrict, map: "intervention_ibfk_equipe")
+  interventionParent                 intervention?                        @relation("InterventionParent", fields: [idInterventionParent], references: [idIntervention], onUpdate: Restrict)
+  interventionsEnfants               intervention[]                       @relation("InterventionParent")
+  plan_preventif_declencheur         plan_preventif_declencheur?          @relation(fields: [idPlanPreventifDeclencheur], references: [idPlanPreventifDeclencheur])
+  plan_preventif                     plan_preventif?                      @relation(fields: [idPlanPreventif], references: [idPlanPreventif])
+  point_structure                    point_structure?                     @relation("InterventionPointStructure", fields: [idPointStructure], references: [idPoint], onDelete: Restrict, onUpdate: Restrict)
+  moyens                             moyen_intervention[]
+  occupations                        occupation_intervention[]
+  operation_intervention             operation_intervention[]
+  securites                          securite_intervention[]
+  sortieStocks                       sortie_stock[]
+  sousTraitances                     sous_traitance_intervention[]
+
+  @@index([code])
+  @@index([etat])
+  @@index([typeMaintenance])
+  @@index([natureIntervention])
+  @@index([priorite])
+  @@index([criticite])
+  @@index([centreCout])
+  @@index([dateDebut])
+  @@index([dateFin])
+  @@index([dateDebutPrevue])
+  @@index([dateFinPrevue])
+  @@index([dateDebutReelle])
+  @@index([dateFinReelle])
+  @@index([dateSouhaiteeFin])
+  @@index([idDemande], map: "idDemande")
+  @@index([idGamme], map: "idGamme")
+  @@index([idMateriel], map: "idMateriel")
+  @@index([idPointStructure])
+  @@index([idEquipe], map: "intervention_ibfk_equipe")
+  @@index([idPlanPreventif])
+  @@index([idPlanPreventifDeclencheur])
+  @@index([idInterventionParent])
+  @@index([idPointMesure])
+  @@index([idReleveMesure])
+}
+
+model materiel {
+  idMateriel                         Int                                  @id @default(autoincrement())
+  code                               String?                              @unique @db.VarChar(50)
+  numeroSerie                        String?                              @unique @db.VarChar(100)
+  dateMiseService                    DateTime?                            @db.Date
+  idModele                           Int?
+  idEtat                             Int?
+  idType                             Int?
+  actif                              Boolean?                             @default(true)
+  idPointStructure                   Int?
+  idLigneEntreeStock                 Int?
+  createdAt                          DateTime                             @default(now())
+  dateDernierInventaire              DateTime?                            @db.Date
+  dateRebut                          DateTime?                            @db.Date
+  gereEnStock                        Boolean                              @default(false)
+  idMaterielParent                   Int?
+  libelle                            String?                              @db.VarChar(150)
+  motifRebut                         String?                              @db.VarChar(255)
+  positionActuelle                   String?                              @db.VarChar(30)
+  updatedAt                          DateTime                             @default(now()) @updatedAt
+  demande_intervention               demande_intervention[]
+  gamme                              gamme[]
+  gamme_operation                    gamme_operation[]                    @relation("GammeOperationMateriel")
+  historique_declenchement_preventif historique_declenchement_preventif[]
+  intervention                       intervention[]
+  lignesInventairePrepare            LigneInventairePrepare[]
+  modele                             modele?                              @relation(fields: [idModele], references: [idModele], onDelete: Restrict, onUpdate: Restrict, map: "materiel_ibfk_1")
+  etat_materiel                      etat_materiel?                       @relation(fields: [idEtat], references: [idEtat], onDelete: Restrict, onUpdate: Restrict, map: "materiel_ibfk_2")
+  type_materiel                      type_materiel?                       @relation(fields: [idType], references: [idType], onDelete: Restrict, onUpdate: Restrict, map: "materiel_ibfk_3")
+  entreeStockLigne                   entree_stock_ligne?                  @relation(fields: [idLigneEntreeStock], references: [idLigneEntreeStock])
+  materielParent                     materiel?                            @relation("MaterielParent", fields: [idMaterielParent], references: [idMateriel], onUpdate: Restrict)
+  sousMateriels                      materiel[]                           @relation("MaterielParent")
+  point_structure                    point_structure?                     @relation("PointStructureMateriels", fields: [idPointStructure], references: [idPoint], onUpdate: Restrict)
+  mouvementsStock                    mouvement_stock[]
+  plan_preventif                     plan_preventif[]
+  plan_preventif_declencheur         plan_preventif_declencheur[]
+  points_mesure                      point_mesure[]
+  lignesSortieStock                  sortie_stock_ligne[]
+
+  @@index([idEtat], map: "idEtat")
+  @@index([idModele], map: "idModele")
+  @@index([idType], map: "idType")
+  @@index([idPointStructure])
+  @@index([idMaterielParent])
+  @@index([idLigneEntreeStock])
+}
+
+model magasin {
+  idMagasin                    Int                           @id @default(autoincrement())
+  code                         String                        @unique @db.VarChar(50)
+  libelle                      String                        @db.VarChar(100)
+  actif                        Boolean                       @default(true)
+  createdAt                    DateTime                      @default(now())
+  updatedAt                    DateTime                      @updatedAt
+  consommations                consommation[]
+  demandes_reapprovisionnement demande_reapprovisionnement[] @relation("MagasinDemandesReapprovisionnement")
+  demandesTransfertDestination demande_transfert_stock[]     @relation("DemandeTransfertDestination")
+  demandesTransfertSource      demande_transfert_stock[]     @relation("DemandeTransfertSource")
+  emplacements                 emplacement_magasin[]
+  lignesEntreeStock            entree_stock_ligne[]
+  inventairesPrepares          InventairePrepare[]
+  mouvementsDest               mouvement_stock[]             @relation("MagasinDestination")
+  mouvementsSource             mouvement_stock[]             @relation("MagasinSource")
+  reservationsStock            reservation_stock[]
+  lignesSortieStock            sortie_stock_ligne[]
+  stocks                       stock_article_magasin[]
+}
+
+model stock_article_magasin {
+  idStock            Int      @id @default(autoincrement())
+  idArticle          Int
+  idMagasin          Int
+  quantitePhysique   Decimal  @default(0.00) @db.Decimal(10, 2)
+  quantiteReservee   Decimal  @default(0.00) @db.Decimal(10, 2)
+  quantiteDisponible Decimal  @default(0.00) @db.Decimal(10, 2)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  article            article  @relation(fields: [idArticle], references: [idArticle])
+  magasin            magasin  @relation(fields: [idMagasin], references: [idMagasin])
+
+  @@unique([idArticle, idMagasin])
+  @@index([idArticle])
+  @@index([idMagasin])
+}
+
+model mouvement_stock {
+  idMouvement          Int       @id @default(autoincrement())
+  typeMouvement        String    @db.VarChar(50)
+  dateMouvement        DateTime  @default(now())
+  quantite             Decimal   @db.Decimal(10, 2)
+  idArticle            Int
+  idMateriel           Int?
+  idMagasinSource      Int?
+  idMagasinDestination Int?
+  origineType          String?   @db.VarChar(50)
+  origineId            Int?
+  commentaire          String?   @db.Text
+  article              article   @relation(fields: [idArticle], references: [idArticle])
+  magasinDestination   magasin?  @relation("MagasinDestination", fields: [idMagasinDestination], references: [idMagasin])
+  magasinSource        magasin?  @relation("MagasinSource", fields: [idMagasinSource], references: [idMagasin])
+  materiel             materiel? @relation(fields: [idMateriel], references: [idMateriel])
+
+  @@index([idArticle])
+  @@index([idMateriel])
+  @@index([idMagasinSource])
+  @@index([idMagasinDestination])
+}
+
+model modele {
+  idModele                        Int                               @id @default(autoincrement())
+  code                            String?                           @unique @db.VarChar(50)
+  libelle                         String?                           @db.VarChar(100)
+  idFamille                       Int?
+  idEtat                          Int
+  budget                          Decimal?                          @db.Decimal(12, 2)
+  commentaire                     String?                           @db.Text
+  dureeVie                        Int?
+  idFabricant                     Int?
+  idMarque                        Int?
+  idTypeEquipement                Int?
+  actif                           Boolean                           @default(true)
+  coutMaintenancePrevu            Decimal?                          @db.Decimal(12, 2)
+  createdAt                       DateTime                          @default(now())
+  createdBy                       String?                           @db.VarChar(100)
+  criticite                       CriticiteModele?                  @default(MOYENNE)
+  garantieMois                    Int?
+  hauteur                         Decimal?                          @db.Decimal(10, 2)
+  idArticle                       Int?                              @unique
+  largeur                         Decimal?                          @db.Decimal(10, 2)
+  longueur                        Decimal?                          @db.Decimal(10, 2)
+  niveauMaintenance               NiveauMaintenance?
+  poidsKg                         Decimal?                          @db.Decimal(10, 2)
+  referenceConstructeur           String?                           @db.VarChar(100)
+  reparable                       Boolean                           @default(true)
+  updatedAt                       DateTime                          @default(now()) @updatedAt
+  updatedBy                       String?                           @db.VarChar(100)
+  version                         String?                           @db.VarChar(50)
+  gamme                           gamme[]
+  gamme_operation                 gamme_operation[]                 @relation("GammeOperationModele")
+  materiel                        materiel[]
+  famille                         famille?                          @relation(fields: [idFamille], references: [idFamille], onDelete: Restrict, onUpdate: Restrict, map: "modele_ibfk_1")
+  etat_modele                     etat_modele                       @relation(fields: [idEtat], references: [idEtat], onUpdate: Restrict, map: "modele_ibfk_2")
+  article                         article?                          @relation("ArticleModele", fields: [idArticle], references: [idArticle], onUpdate: Restrict)
+  fabricant                       fabricant?                        @relation(fields: [idFabricant], references: [idFabricant], onUpdate: Restrict)
+  marque                          marque?                           @relation(fields: [idMarque], references: [idMarque], onUpdate: Restrict)
+  type_equipement                 type_equipement?                  @relation(fields: [idTypeEquipement], references: [idTypeEquipement], onUpdate: Restrict)
+  modele_plan_preventif_predefini modele_plan_preventif_predefini[]
+  plan_preventif_declencheur      plan_preventif_declencheur[]
+  plan_preventif_predefini        plan_preventif_predefini[]
+  ppp_declencheur                 ppp_declencheur[]
+
+  @@index([idFamille], map: "idFamille")
+  @@index([idEtat], map: "modele_ibfk_2")
+  @@index([idTypeEquipement])
+  @@index([idFabricant])
+  @@index([idMarque])
+  @@index([criticite])
+  @@index([actif])
+}
+
+model operation_intervention {
+  idOperation            Int                       @id @default(autoincrement())
+  ordre                  Int?
+  libelle                String?                   @db.VarChar(100)
+  tempsPasse             Int?
+  idIntervention         Int?
+  description            String?                   @db.Text
+  idGammeOperationSource Int?
+  obligatoire            Boolean?                  @default(false)
+  occupations            occupation_intervention[]
+  intervention           intervention?             @relation(fields: [idIntervention], references: [idIntervention], onDelete: Restrict, onUpdate: Restrict, map: "operation_intervention_ibfk_1")
+  gamme_operation        gamme_operation?          @relation(fields: [idGammeOperationSource], references: [idOperation])
+
+  @@index([idIntervention], map: "idIntervention")
+  @@index([idGammeOperationSource])
+}
+
+model point_structure {
+  idPoint                            Int                                  @id @default(autoincrement())
+  code                               String?                              @unique @db.VarChar(50)
+  libelle                            String?                              @db.VarChar(100)
+  description                        String?                              @db.Text
+  typePoint                          String                               @db.VarChar(30)
+  actif                              Boolean?                             @default(true)
+  accesRestreint                     Boolean                              @default(false)
+  categorie                          String?
+  centreCout                         String?
+  consigneSecurite                   String?
+  criticite                          String                               @default("MOYENNE")
+  epiObligatoire                     Boolean                              @default(false)
+  etat                               String                               @default("VALIDE")
+  interventionsAutorisees            Boolean                              @default(true)
+  observationMaintenance             String?
+  organisation                       String?
+  responsable                        String?
+  zoneSensible                       Boolean                              @default(false)
+  gamme_operation                    gamme_operation[]                    @relation("GammeOperationPointStructure")
+  historique_declenchement_preventif historique_declenchement_preventif[]
+  interventions                      intervention[]                       @relation("InterventionPointStructure")
+  materiels                          materiel[]                           @relation("PointStructureMateriels")
+  plan_preventif                     plan_preventif[]
+  plan_preventif_declencheur         plan_preventif_declencheur[]
+  pointMesures                       point_mesure[]
+}
+
+model point_mesure {
+  idPointMesure              Int                          @id @default(autoincrement())
+  code                       String                       @unique @db.VarChar(50)
+  libelle                    String                       @db.VarChar(150)
+  type                       String                       @db.VarChar(30)
+  unite                      String?                      @db.VarChar(20)
+  idPointStructure           Int?
+  idMateriel                 Int?
+  derniereValeur             Decimal?                     @db.Decimal(10, 2)
+  derniereDate               DateTime?
+  actif                      Boolean                      @default(true)
+  createdAt                  DateTime                     @default(now())
+  updatedAt                  DateTime                     @updatedAt
+  correctionMax              Decimal?                     @db.Decimal(10, 2)
+  correctionMin              Decimal?                     @db.Decimal(10, 2)
+  emettreDi                  Boolean                      @default(false)
+  envoyerAlerte              Boolean                      @default(false)
+  nbDecimales                Int?                         @default(2)
+  organisation               String?                      @db.VarChar(50)
+  periodeReleveJours         Int?
+  surveillanceMax            Decimal?                     @db.Decimal(10, 2)
+  surveillanceMin            Decimal?                     @db.Decimal(10, 2)
+  valeurMax                  Decimal?                     @db.Decimal(10, 2)
+  valeurMin                  Decimal?                     @db.Decimal(10, 2)
+  plan_preventif_declencheur plan_preventif_declencheur[]
+  materiel                   materiel?                    @relation(fields: [idMateriel], references: [idMateriel], onUpdate: Restrict)
+  point_structure            point_structure?             @relation(fields: [idPointStructure], references: [idPoint], onUpdate: Restrict)
+  ppp_declencheur            ppp_declencheur[]
+  releves                    releve_mesure[]
+
+  @@index([idPointStructure])
+  @@index([idMateriel])
+}
+
+model releve_mesure {
+  idReleveMesure Int          @id @default(autoincrement())
+  idPointMesure  Int
+  dateReleve     DateTime     @default(now())
+  valeur         Decimal      @db.Decimal(10, 2)
+  variation      Decimal?     @db.Decimal(10, 2)
+  commentaire    String?      @db.VarChar(255)
+  correction     Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  point_mesure   point_mesure @relation(fields: [idPointMesure], references: [idPointMesure], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([idPointMesure])
+}
+
+model technicien {
+  idTechnicien           Int                       @id @default(autoincrement())
+  matricule              String?                   @db.VarChar(50)
+  nom                    String?                   @db.VarChar(100)
+  idEquipe               Int?
+  roleEquipe             String?                   @default("TECHNICIEN") @db.VarChar(30)
+  affectation_technicien affectation_technicien[]
+  occupations            occupation_intervention[]
+  equipe_maintenance     equipe_maintenance?       @relation(fields: [idEquipe], references: [idEquipe], onDelete: Restrict, onUpdate: Restrict, map: "technicien_ibfk_equipe")
+
+  @@index([idEquipe], map: "technicien_ibfk_equipe")
+}
+
+model type_materiel {
+  idType   Int        @id @default(autoincrement())
+  libelle  String?    @db.VarChar(100)
+  materiel materiel[]
+}
+
+model lien_arborescence {
+  idLien           Int      @id @default(autoincrement())
+  typeArborescence String   @db.VarChar(30)
+  parentType       String   @db.VarChar(30)
+  parentPointId    Int?
+  parentMaterielId Int?
+  enfantType       String   @db.VarChar(30)
+  enfantPointId    Int?
+  enfantMaterielId Int?
+  ordre            Int?
+  actif            Boolean? @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([typeArborescence], map: "idx_type_arborescence")
+  @@index([parentPointId], map: "idx_parent_point")
+  @@index([parentMaterielId], map: "idx_parent_materiel")
+  @@index([enfantPointId], map: "idx_enfant_point")
+  @@index([enfantMaterielId], map: "idx_enfant_materiel")
+}
+
+model entree_stock {
+  idEntreeStock Int                  @id @default(autoincrement())
+  numero        String               @unique @db.VarChar(50)
+  dateReception DateTime
+  commentaire   String?              @db.Text
+  statut        String               @default("VALIDEE") @db.VarChar(30)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  lignes        entree_stock_ligne[]
+
+  @@index([numero])
+}
+
+model entree_stock_ligne {
+  idLigneEntreeStock Int                  @id @default(autoincrement())
+  idEntreeStock      Int
+  idArticle          Int
+  idMagasin          Int
+  idEmplacement      Int?
+  quantite           Decimal              @db.Decimal(10, 2)
+  prixUnitaire       Decimal?             @db.Decimal(10, 2)
+  numeroLot          String?              @db.VarChar(100)
+  datePeremption     DateTime?
+  commentaire        String?              @db.Text
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  article            article              @relation(fields: [idArticle], references: [idArticle])
+  emplacement        emplacement_magasin? @relation(fields: [idEmplacement], references: [idEmplacement])
+  entreeStock        entree_stock         @relation(fields: [idEntreeStock], references: [idEntreeStock], onDelete: Cascade)
+  magasin            magasin              @relation(fields: [idMagasin], references: [idMagasin])
+  materiels          materiel[]
+
+  @@index([idEntreeStock])
+  @@index([idArticle])
+  @@index([idMagasin])
+  @@index([idEmplacement])
+}
+
+model sortie_stock {
+  idSortieStock  Int                  @id @default(autoincrement())
+  numero         String               @unique @db.VarChar(50)
+  dateSortie     DateTime
+  commentaire    String?              @db.Text
+  statut         String               @default("VALIDEE") @db.VarChar(30)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  idIntervention Int?
+  intervention   intervention?        @relation(fields: [idIntervention], references: [idIntervention])
+  lignes         sortie_stock_ligne[]
+
+  @@index([numero])
+  @@index([idIntervention])
+}
+
+model sortie_stock_ligne {
+  idLigneSortieStock Int                  @id @default(autoincrement())
+  idSortieStock      Int
+  idArticle          Int
+  idMagasin          Int
+  idEmplacement      Int?
+  idMateriel         Int?
+  quantite           Decimal              @db.Decimal(10, 2)
+  prixUnitaire       Decimal?             @db.Decimal(10, 2)
+  commentaire        String?              @db.Text
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  consommations      consommation[]
+  article            article              @relation(fields: [idArticle], references: [idArticle])
+  emplacement        emplacement_magasin? @relation(fields: [idEmplacement], references: [idEmplacement])
+  magasin            magasin              @relation(fields: [idMagasin], references: [idMagasin])
+  materiel           materiel?            @relation(fields: [idMateriel], references: [idMateriel])
+  sortieStock        sortie_stock         @relation(fields: [idSortieStock], references: [idSortieStock], onDelete: Cascade)
+
+  @@index([idSortieStock])
+  @@index([idArticle])
+  @@index([idMagasin])
+  @@index([idEmplacement])
+  @@index([idMateriel])
+}
+
+model emplacement_magasin {
+  idEmplacement     Int                  @id @default(autoincrement())
+  idMagasin         Int
+  code              String               @db.VarChar(50)
+  libelle           String               @db.VarChar(100)
+  actif             Boolean              @default(true)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  magasin           magasin              @relation(fields: [idMagasin], references: [idMagasin], onDelete: Cascade)
+  lignesEntreeStock entree_stock_ligne[]
+  lignesSortieStock sortie_stock_ligne[]
+
+  @@unique([idMagasin, code])
+  @@index([idMagasin])
+}
+
+model InventairePrepare {
+  idInventairePrepare Int                      @id @default(autoincrement())
+  numero              String                   @unique @db.VarChar(50)
+  dateCreation        DateTime                 @default(now())
+  dateComptage        DateTime?
+  dateValidation      DateTime?
+  idMagasin           Int
+  statut              StatutInventaire         @default(BROUILLON)
+  commentaire         String?                  @db.Text
+  magasin             magasin                  @relation(fields: [idMagasin], references: [idMagasin])
+  lignes              LigneInventairePrepare[]
+
+  @@index([idMagasin])
+  @@index([statut])
+  @@map("inventaire_prepare")
+}
+
+model LigneInventairePrepare {
+  idLigneInventairePrepare Int               @id @default(autoincrement())
+  idInventairePrepare      Int
+  idArticle                Int
+  idMateriel               Int?
+  quantiteTheorique        Decimal           @default(0.00) @db.Decimal(10, 2)
+  quantiteReelle           Decimal?          @db.Decimal(10, 2)
+  ecart                    Decimal?          @db.Decimal(10, 2)
+  commentaire              String?           @db.Text
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+  article                  article           @relation(fields: [idArticle], references: [idArticle])
+  inventairePrepare        InventairePrepare @relation(fields: [idInventairePrepare], references: [idInventairePrepare], onDelete: Cascade)
+  materiel                 materiel?         @relation(fields: [idMateriel], references: [idMateriel])
+
+  @@index([idInventairePrepare])
+  @@index([idArticle])
+  @@index([idMateriel])
+  @@map("ligne_inventaire_prepare")
+}
+
+model reservation_stock {
+  idReservationStock Int       @id @default(autoincrement())
+  numero             String    @unique @db.VarChar(50)
+  dateReservation    DateTime  @default(now())
+  dateAnnulation     DateTime?
+  statut             String    @default("VALIDEE") @db.VarChar(30)
+  idArticle          Int
+  idMagasin          Int
+  quantite           Decimal   @db.Decimal(10, 2)
+  demandeur          String?   @db.VarChar(100)
+  origineType        String?   @db.VarChar(50)
+  origineId          Int?
+  commentaire        String?   @db.Text
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  article            article   @relation(fields: [idArticle], references: [idArticle])
+  magasin            magasin   @relation(fields: [idMagasin], references: [idMagasin])
+
+  @@index([idArticle])
+  @@index([idMagasin])
+  @@index([statut])
+}
+
+model demande_transfert_stock {
+  idDemandeTransfertStock Int                             @id @default(autoincrement())
+  numero                  String                          @unique @db.VarChar(50)
+  dateDemande             DateTime                        @default(now())
+  dateValidation          DateTime?
+  dateExecution           DateTime?
+  dateAnnulation          DateTime?
+  statut                  String                          @default("EN_ATTENTE") @db.VarChar(30)
+  idMagasinSource         Int
+  idMagasinDestination    Int
+  demandeur               String?                         @db.VarChar(100)
+  commentaire             String?                         @db.Text
+  createdAt               DateTime                        @default(now())
+  updatedAt               DateTime                        @updatedAt
+  magasinDestination      magasin                         @relation("DemandeTransfertDestination", fields: [idMagasinDestination], references: [idMagasin])
+  magasinSource           magasin                         @relation("DemandeTransfertSource", fields: [idMagasinSource], references: [idMagasin])
+  lignes                  ligne_demande_transfert_stock[]
+
+  @@index([idMagasinSource])
+  @@index([idMagasinDestination])
+  @@index([statut])
+}
+
+model ligne_demande_transfert_stock {
+  idLigneDemandeTransfertStock Int                     @id @default(autoincrement())
+  idDemandeTransfertStock      Int
+  idArticle                    Int
+  quantite                     Decimal                 @db.Decimal(10, 2)
+  commentaire                  String?                 @db.Text
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
+  article                      article                 @relation(fields: [idArticle], references: [idArticle])
+  demandeTransfert             demande_transfert_stock @relation(fields: [idDemandeTransfertStock], references: [idDemandeTransfertStock], onDelete: Cascade)
+
+  @@unique([idDemandeTransfertStock, idArticle])
+  @@index([idDemandeTransfertStock])
+  @@index([idArticle])
+}
+
+model demande_reapprovisionnement {
+  idDemandeReapprovisionnement Int                         @id @default(autoincrement())
+  numero                       String                      @unique @db.VarChar(50)
+  dateDemande                  DateTime                    @default(now())
+  dateValidation               DateTime?
+  dateAnnulation               DateTime?
+  statut                       String                      @default("BROUILLON") @db.VarChar(30)
+  demandeur                    String?                     @db.VarChar(150)
+  commentaire                  String?                     @db.Text
+  idMagasin                    Int
+  magasin                      magasin                     @relation("MagasinDemandesReapprovisionnement", fields: [idMagasin], references: [idMagasin])
+  lignes                       ligne_reapprovisionnement[]
+
+  @@index([idMagasin])
+  @@map("demande_reapprovisionnement")
+}
+
+model ligne_reapprovisionnement {
+  idLigneReapprovisionnement   Int                         @id @default(autoincrement())
+  idDemandeReapprovisionnement Int
+  idArticle                    Int
+  quantiteDemandee             Decimal                     @db.Decimal(10, 2)
+  commentaire                  String?                     @db.Text
+  article                      article                     @relation("ArticleLignesReapprovisionnement", fields: [idArticle], references: [idArticle])
+  demande                      demande_reapprovisionnement @relation(fields: [idDemandeReapprovisionnement], references: [idDemandeReapprovisionnement], onDelete: Cascade)
+
+  @@index([idDemandeReapprovisionnement])
+  @@index([idArticle])
+  @@map("ligne_reapprovisionnement")
+}
+
+model plan_preventif_predefini {
+  idPlanPreventifPredefini        Int                               @id @default(autoincrement())
+  code                            String                            @unique @db.VarChar(50)
+  titre                           String?                           @db.VarChar(150)
+  etat                            String?                           @db.VarChar(50)
+  typeDeclenchement               String?                           @db.VarChar(30)
+  organisation                    String?                           @db.VarChar(50)
+  idModele                        Int?
+  actif                           Boolean?                          @default(true)
+  createdAt                       DateTime                          @default(now())
+  updatedAt                       DateTime                          @updatedAt
+  modele_plan_preventif_predefini modele_plan_preventif_predefini[]
+  plan_preventif                  plan_preventif[]
+  modele                          modele?                           @relation(fields: [idModele], references: [idModele])
+  ppp_declencheur                 ppp_declencheur[]
+
+  @@index([idModele])
+}
+
+model ppp_declencheur {
+  idPppDeclencheur            Int                          @id @default(autoincrement())
+  idPlanPreventifPredefini    Int
+  priorite                    Int?                         @default(1)
+  etat                        String?                      @db.VarChar(50)
+  typeDeclencheur             String                       @db.VarChar(30)
+  idGamme                     Int
+  idModele                    Int?
+  etatInterventionCible       String?                      @db.VarChar(50)
+  horizonJours                Int?
+  toleranceJours              Int?
+  actualisation               String?                      @db.VarChar(30)
+  periodiciteValeur           Int?
+  periodiciteUnite            String?                      @db.VarChar(20)
+  nombreJoursPremierLancement Int?
+  seuilValeur                 Decimal?                     @db.Decimal(10, 2)
+  operateur                   String?                      @db.VarChar(10)
+  symptomeCode                String?                      @db.VarChar(50)
+  saisonnaliteDu              DateTime?                    @db.Date
+  saisonnaliteAu              DateTime?                    @db.Date
+  actif                       Boolean?                     @default(true)
+  idPointMesure               Int?
+  plan_preventif_declencheur  plan_preventif_declencheur[]
+  gamme                       gamme                        @relation(fields: [idGamme], references: [idGamme])
+  modele                      modele?                      @relation(fields: [idModele], references: [idModele])
+  plan_preventif_predefini    plan_preventif_predefini     @relation(fields: [idPlanPreventifPredefini], references: [idPlanPreventifPredefini])
+  point_mesure                point_mesure?                @relation(fields: [idPointMesure], references: [idPointMesure], onUpdate: Restrict)
+
+  @@index([idPlanPreventifPredefini])
+  @@index([idGamme])
+  @@index([idModele])
+  @@index([idPointMesure])
+}
+
+model plan_preventif {
+  idPlanPreventif                Int                          @id @default(autoincrement())
+  code                           String                       @unique @db.VarChar(50)
+  libelle                        String?                      @db.VarChar(150)
+  etat                           String?                      @db.VarChar(50)
+  typeDeclenchement              String?                      @db.VarChar(30)
+  idMateriel                     Int?
+  idPointStructure               Int?
+  idPlanPreventifPredefiniSource Int?
+  organisation                   String?                      @db.VarChar(50)
+  masquerLignesInactives         Boolean?                     @default(true)
+  actif                          Boolean?                     @default(true)
+  createdAt                      DateTime                     @default(now())
+  updatedAt                      DateTime                     @updatedAt
+  intervention                   intervention[]
+  materiel                       materiel?                    @relation(fields: [idMateriel], references: [idMateriel])
+  plan_preventif_predefini       plan_preventif_predefini?    @relation(fields: [idPlanPreventifPredefiniSource], references: [idPlanPreventifPredefini])
+  point_structure                point_structure?             @relation(fields: [idPointStructure], references: [idPoint])
+  plan_preventif_declencheur     plan_preventif_declencheur[]
+
+  @@index([idMateriel])
+  @@index([idPointStructure])
+  @@index([idPlanPreventifPredefiniSource])
+}
+
+model plan_preventif_declencheur {
+  idPlanPreventifDeclencheur         Int                                  @id @default(autoincrement())
+  idPlanPreventif                    Int
+  idPppDeclencheurSource             Int?
+  priorite                           Int?                                 @default(1)
+  etat                               String?                              @db.VarChar(50)
+  typeDeclencheur                    String                               @db.VarChar(30)
+  idGamme                            Int
+  idPointStructure                   Int?
+  idMateriel                         Int?
+  idModele                           Int?
+  idFamille                          Int?
+  etatInterventionCible              String?                              @db.VarChar(50)
+  actualisation                      String?                              @db.VarChar(30)
+  horizonJours                       Int?
+  toleranceJours                     Int?
+  periodiciteValeur                  Int?
+  periodiciteUnite                   String?                              @db.VarChar(20)
+  prochainLancementDate              DateTime?                            @db.Date
+  derniereRealisationDate            DateTime?                            @db.Date
+  derniereRealisationPrevueDate      DateTime?                            @db.Date
+  operateur                          String?                              @db.VarChar(10)
+  seuilValeur                        Decimal?                             @db.Decimal(10, 2)
+  prochainLancementValeur            Decimal?                             @db.Decimal(10, 2)
+  derniereRealisationValeur          Decimal?                             @db.Decimal(10, 2)
+  derniereRealisationPrevueValeur    Decimal?                             @db.Decimal(10, 2)
+  symptomeCode                       String?                              @db.VarChar(50)
+  saisonnaliteDu                     DateTime?                            @db.Date
+  saisonnaliteAu                     DateTime?                            @db.Date
+  actif                              Boolean?                             @default(true)
+  createdAt                          DateTime                             @default(now())
+  updatedAt                          DateTime                             @updatedAt
+  idPointMesure                      Int?
+  historique_declenchement_preventif historique_declenchement_preventif[]
+  intervention                       intervention[]
+  famille                            famille?                             @relation(fields: [idFamille], references: [idFamille])
+  gamme                              gamme                                @relation(fields: [idGamme], references: [idGamme])
+  materiel                           materiel?                            @relation(fields: [idMateriel], references: [idMateriel])
+  modele                             modele?                              @relation(fields: [idModele], references: [idModele])
+  plan_preventif                     plan_preventif                       @relation(fields: [idPlanPreventif], references: [idPlanPreventif])
+  point_mesure                       point_mesure?                        @relation(fields: [idPointMesure], references: [idPointMesure], onUpdate: Restrict)
+  point_structure                    point_structure?                     @relation(fields: [idPointStructure], references: [idPoint])
+  ppp_declencheur                    ppp_declencheur?                     @relation(fields: [idPppDeclencheurSource], references: [idPppDeclencheur])
+
+  @@index([idPlanPreventif])
+  @@index([idPppDeclencheurSource])
+  @@index([idGamme])
+  @@index([idPointStructure])
+  @@index([idMateriel])
+  @@index([idModele])
+  @@index([idFamille])
+  @@index([idPointMesure])
+}
+
+model historique_declenchement_preventif {
+  idHistoriqueDeclenchement  Int                        @id @default(autoincrement())
+  idPlanPreventifDeclencheur Int
+  idIntervention             Int?
+  idMateriel                 Int?
+  idPointStructure           Int?
+  dateDeclenchement          DateTime                   @default(now())
+  conditionResume            String?                    @db.Text
+  valeurRealisation          Decimal?                   @db.Decimal(10, 2)
+  fictif                     Boolean?                   @default(false)
+  statut                     String?                    @db.VarChar(30)
+  createdAt                  DateTime                   @default(now())
+  intervention               intervention?              @relation(fields: [idIntervention], references: [idIntervention])
+  materiel                   materiel?                  @relation(fields: [idMateriel], references: [idMateriel])
+  plan_preventif_declencheur plan_preventif_declencheur @relation(fields: [idPlanPreventifDeclencheur], references: [idPlanPreventifDeclencheur])
+  point_structure            point_structure?           @relation(fields: [idPointStructure], references: [idPoint])
+
+  @@index([idPlanPreventifDeclencheur])
+  @@index([idIntervention])
+  @@index([idMateriel])
+  @@index([idPointStructure])
+}
+
+model equipe_maintenance {
+  idEquipe     Int            @id @default(autoincrement())
+  code         String         @unique(map: "code") @db.VarChar(50)
+  libelle      String?        @db.VarChar(100)
+  heureDebut   DateTime?      @db.Time(0)
+  heureFin     DateTime?      @db.Time(0)
+  actif        Boolean?       @default(true)
+  intervention intervention[]
+  technicien   technicien[]
+}
+
+model type_equipement {
+  idTypeEquipement Int      @id @default(autoincrement())
+  code             String   @unique @db.VarChar(50)
+  libelle          String   @db.VarChar(150)
+  description      String?  @db.Text
+  actif            Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  modeles          modele[]
+}
+
+model fabricant {
+  idFabricant Int      @id @default(autoincrement())
+  code        String   @unique @db.VarChar(50)
+  nom         String   @db.VarChar(150)
+  pays        String?  @db.VarChar(100)
+  telephone   String?  @db.VarChar(30)
+  email       String?  @db.VarChar(150)
+  siteWeb     String?  @db.VarChar(255)
+  actif       Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  marques     marque[]
+  modeles     modele[]
+}
+
+model marque {
+  idMarque    Int        @id @default(autoincrement())
+  code        String     @unique @db.VarChar(50)
+  libelle     String     @db.VarChar(150)
+  description String?    @db.Text
+  idFabricant Int?
+  actif       Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  fabricant   fabricant? @relation(fields: [idFabricant], references: [idFabricant], onUpdate: Restrict)
+  modeles     modele[]
+
+  @@index([idFabricant], map: "marque_idFabricant_fkey")
+}
+
+model modele_plan_preventif_predefini {
+  idModelePlanPreventifPredefini Int                      @id @default(autoincrement())
+  idModele                       Int
+  idPlanPreventifPredefini       Int
+  principal                      Boolean                  @default(false)
+  actif                          Boolean                  @default(true)
+  createdAt                      DateTime                 @default(now())
+  modele                         modele                   @relation(fields: [idModele], references: [idModele], onDelete: Cascade)
+  plan_preventif_predefini       plan_preventif_predefini @relation(fields: [idPlanPreventifPredefini], references: [idPlanPreventifPredefini], onDelete: Cascade)
+
+  @@unique([idModele, idPlanPreventifPredefini])
+  @@index([idModele])
+  @@index([idPlanPreventifPredefini])
+}
+
+model compte_rendu_intervention {
+  idCompteRendu    Int          @id @default(autoincrement())
+  idIntervention   Int          @unique
+  dateCompteRendu  DateTime     @default(now())
+  saisiPar         String?      @db.VarChar(100)
+  travauxEffectues String?      @db.Text
+  diagnostic       String?      @db.Text
+  cause            String?      @db.VarChar(150)
+  remede           String?      @db.VarChar(150)
+  observation      String?      @db.Text
+  resultat         String?      @db.VarChar(50)
+  tempsArret       Decimal?     @db.Decimal(10, 2)
+  dureeReelle      Decimal?     @db.Decimal(10, 2)
+  intervention     intervention @relation(fields: [idIntervention], references: [idIntervention], onDelete: Cascade)
+
+  @@index([idIntervention])
+}
+
+model historique_etat_intervention {
+  idHistoriqueEtat Int          @id @default(autoincrement())
+  idIntervention   Int
+  ancienEtat       String?      @db.VarChar(50)
+  nouvelEtat       String       @db.VarChar(50)
+  action           String?      @db.VarChar(100)
+  commentaire      String?      @db.Text
+  changedBy        String?      @db.VarChar(100)
+  changedAt        DateTime     @default(now())
+  intervention     intervention @relation(fields: [idIntervention], references: [idIntervention], onDelete: Cascade)
+
+  @@index([idIntervention])
+  @@index([nouvelEtat])
+}
+
+model historique_etat_demande_intervention {
+  idHistoriqueEtat Int                  @id @default(autoincrement())
+  idDemande        Int
+  ancienStatut     String?              @db.VarChar(50)
+  nouveauStatut    String               @db.VarChar(50)
+  action           String?              @db.VarChar(100)
+  commentaire      String?              @db.Text
+  changedBy        String?              @db.VarChar(100)
+  changedAt        DateTime             @default(now()) @db.DateTime(0)
+  demande          demande_intervention @relation(fields: [idDemande], references: [idDemande], onDelete: Cascade)
+
+  @@index([idDemande])
+  @@index([nouveauStatut])
+}
+
+model anomalie_intervention {
+  idAnomalie            Int           @id @default(autoincrement())
+  idInterventionOrigine Int
+  idInterventionSuivi   Int?
+  titre                 String        @db.VarChar(150)
+  description           String?       @db.Text
+  criticite             String?       @default("MOYENNE") @db.VarChar(30)
+  urgence               String?       @default("NORMALE") @db.VarChar(30)
+  statut                String        @default("OUVERTE") @db.VarChar(50)
+  detecteePar           String?       @db.VarChar(100)
+  dateDetection         DateTime      @default(now())
+  actionRecommandee     String?       @db.Text
+  interventionOrigine   intervention  @relation("InterventionOrigineAnomalie", fields: [idInterventionOrigine], references: [idIntervention], onDelete: Cascade)
+  interventionSuivi     intervention? @relation("InterventionSuiviAnomalie", fields: [idInterventionSuivi], references: [idIntervention])
+
+  @@index([idInterventionOrigine])
+  @@index([idInterventionSuivi])
+  @@index([statut])
+}
+
+model occupation_intervention {
+  idOccupation     Int                     @id @default(autoincrement())
+  idIntervention   Int
+  idTechnicien     Int?
+  idOperation      Int?
+  dateOccupation   DateTime                @db.DateTime(0)
+  duree            Decimal                 @db.Decimal(10, 2)
+  natureOccupation String?                 @db.VarChar(80)
+  typeHoraire      String?                 @db.VarChar(80)
+  commentaire      String?                 @db.Text
+  createdBy        String?                 @db.VarChar(100)
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  intervention     intervention            @relation(fields: [idIntervention], references: [idIntervention], onDelete: Cascade)
+  operation        operation_intervention? @relation(fields: [idOperation], references: [idOperation])
+  technicien       technicien?             @relation(fields: [idTechnicien], references: [idTechnicien])
+
+  @@index([idIntervention])
+  @@index([idTechnicien])
+  @@index([idOperation])
+  @@index([dateOccupation])
+}
+
+model moyen_intervention {
+  idMoyenIntervention Int          @id @default(autoincrement())
+  idIntervention      Int
+  codeMoyen           String?      @db.VarChar(50)
+  designation         String       @db.VarChar(150)
+  typeMoyen           String?      @db.VarChar(80)
+  quantite            Decimal?     @db.Decimal(10, 2)
+  dureePrevue         Decimal?     @db.Decimal(10, 2)
+  dureeReelle         Decimal?     @db.Decimal(10, 2)
+  coutPrevu           Decimal?     @db.Decimal(10, 2)
+  coutReel            Decimal?     @db.Decimal(10, 2)
+  commentaire         String?      @db.Text
+  intervention        intervention @relation(fields: [idIntervention], references: [idIntervention], onDelete: Cascade)
+
+  @@index([idIntervention])
+}
+
+model sous_traitance_intervention {
+  idSousTraitance Int          @id @default(autoincrement())
+  idIntervention  Int
+  prestataire     String?      @db.VarChar(150)
+  service         String?      @db.VarChar(150)
+  description     String?      @db.Text
+  datePrevue      DateTime?    @db.DateTime(0)
+  dateReelle      DateTime?    @db.DateTime(0)
+  coutPrevu       Decimal?     @db.Decimal(10, 2)
+  coutRevise      Decimal?     @db.Decimal(10, 2)
+  coutReel        Decimal?     @db.Decimal(10, 2)
+  statut          String?      @default("PREVU") @db.VarChar(50)
+  intervention    intervention @relation(fields: [idIntervention], references: [idIntervention], onDelete: Cascade)
+
+  @@index([idIntervention])
+}
+
+model fourniture_intervention {
+  idFourniture    Int          @id @default(autoincrement())
+  idIntervention  Int
+  idArticle       Int?
+  designation     String?      @db.VarChar(150)
+  source          String?      @db.VarChar(50)
+  quantitePrevue  Decimal?     @db.Decimal(10, 2)
+  quantiteRevisee Decimal?     @db.Decimal(10, 2)
+  quantiteReelle  Decimal?     @db.Decimal(10, 2)
+  coutPrevu       Decimal?     @db.Decimal(10, 2)
+  coutRevise      Decimal?     @db.Decimal(10, 2)
+  coutReel        Decimal?     @db.Decimal(10, 2)
+  statut          String?      @default("PREVU") @db.VarChar(50)
+  article         article?     @relation(fields: [idArticle], references: [idArticle])
+  intervention    intervention @relation(fields: [idIntervention], references: [idIntervention], onDelete: Cascade)
+
+  @@index([idIntervention])
+  @@index([idArticle])
+}
+
+model adresse_intervention {
+  idAdresseIntervention Int          @id @default(autoincrement())
+  idIntervention        Int
+  typeAdresse           String?      @db.VarChar(50)
+  adresse               String?      @db.VarChar(255)
+  ville                 String?      @db.VarChar(100)
+  pays                  String?      @db.VarChar(100)
+  commentaire           String?      @db.Text
+  intervention          intervention @relation(fields: [idIntervention], references: [idIntervention], onDelete: Cascade)
+
+  @@index([idIntervention])
+}
+
+model securite_intervention {
+  idSecurite     Int          @id @default(autoincrement())
+  idIntervention Int
+  typeElement    String?      @db.VarChar(50)
+  libelle        String       @db.VarChar(150)
+  description    String?      @db.Text
+  obligatoire    Boolean      @default(false)
+  realise        Boolean      @default(false)
+  intervention   intervention @relation(fields: [idIntervention], references: [idIntervention], onDelete: Cascade)
+
+  @@index([idIntervention])
+}
+
+enum CategorieArticle {
+  PIECE_RECHANGE
+  CONSOMMABLE
+  FOURNITURE
+  OUTILLAGE
+  EQUIPEMENT_STOCKE
+  SERVICE
+  AUTRE
+}
+
+enum CriticiteModele {
+  FAIBLE
+  MOYENNE
+  ELEVEE
+  CRITIQUE
+}
+
+enum NiveauMaintenance {
+  NIVEAU_1
+  NIVEAU_2
+  NIVEAU_3
+  NIVEAU_4
+  NIVEAU_5
+}
+
+enum TypeFamille {
+  EQUIPEMENT
+  ARTICLE
+  MIXTE
+}
+
+enum NatureAchatFamille {
+  ELECTRIQUE
+  MECANIQUE
+  HYDRAULIQUE
+  PNEUMATIQUE
+  AUTOMATISME
+  INFORMATIQUE
+  GENERAL
+}
+
+enum StatutInventaire {
+  BROUILLON
+  EN_COMPTAGE
+  VALIDE
+  ANNULE
+}
