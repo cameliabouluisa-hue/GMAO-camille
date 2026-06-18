@@ -76,13 +76,11 @@ export default function LayoutWrapper({
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="rounded-2xl border border-slate-200 px-6 py-3 text-sm font-bold text-slate-500">
-                Interface administrateur
-              </div>
+              
 
               <div className="rounded-full bg-cyan-50 px-6 py-3 text-sm font-black text-slate-900">
-                Admin
-              </div>
+                
+                   Magasinier            </div>
             </div>
           </div>
         </header>

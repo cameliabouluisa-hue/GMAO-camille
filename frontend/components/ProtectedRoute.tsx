@@ -1,59 +1,70 @@
 'use client';
 
+import { useEffect, type ReactNode } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { UserRole } from '@/types/auth';
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  requiredRoles?: UserRole[];
-  redirectTo?: string;
-}
+type Props = {
+  children: ReactNode;
+};
 
-/**
- * ProtectedRoute Component
- * 
- * Wraps pages/sections that require authentication
- * Optionally restricts access to specific roles
- */
-export function ProtectedRoute({
-  children,
-  requiredRoles,
-  redirectTo = '/auth/login',
-}: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, user, hasAnyRole } = useAuth();
+const PUBLIC_ROUTES = ['/auth/login'];
+
+export default function ProtectedRoute({ children }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+  const { isLoading, isAuthenticated } = useAuth();
+
+  const isPublicRoute = PUBLIC_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
 
   useEffect(() => {
     if (isLoading) return;
 
-    if (!isAuthenticated) {
-      router.push(redirectTo);
+    if (!isAuthenticated && !isPublicRoute) {
+      window.location.replace('/auth/login');
       return;
     }
 
-    // Check role restriction if specified
-    if (requiredRoles && !hasAnyRole(requiredRoles)) {
-      router.push('/unauthorized');
+    if (isAuthenticated && isPublicRoute) {
+      router.replace('/');
     }
-  }, [isAuthenticated, isLoading, requiredRoles, hasAnyRole, router, redirectTo]);
+  }, [isLoading, isAuthenticated, isPublicRoute, pathname, router]);
 
-  // Show loading state while checking auth
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#f4f7fb]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-[#163E56]"></div>
-          <p className="text-sm text-slate-600">Vérification de l&apos;accès...</p>
+      <main className="flex min-h-screen items-center justify-center bg-[#f5f7fb]">
+        <div className="flex flex-col items-center gap-3 text-slate-500">
+          <Loader2 className="animate-spin text-[#163E56]" size={28} />
+          <p className="text-sm font-bold">Chargement...</p>
         </div>
-      </div>
+      </main>
     );
   }
 
-  // If not authenticated or not authorized, don't render
-  if (!isAuthenticated || (requiredRoles && !hasAnyRole(requiredRoles))) {
-    return null;
+  if (!isAuthenticated && !isPublicRoute) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f5f7fb]">
+        <div className="flex flex-col items-center gap-3 text-slate-500">
+          <Loader2 className="animate-spin text-[#163E56]" size={28} />
+          <p className="text-sm font-bold">Redirection vers la connexion...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (isAuthenticated && isPublicRoute) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f5f7fb]">
+        <div className="flex flex-col items-center gap-3 text-slate-500">
+          <Loader2 className="animate-spin text-[#163E56]" size={28} />
+          <p className="text-sm font-bold">Redirection vers le dashboard...</p>
+        </div>
+      </main>
+    );
   }
 
   return <>{children}</>;

@@ -648,7 +648,7 @@ model technicien {
   affectation_technicien affectation_technicien[]
   occupations            occupation_intervention[]
   equipe_maintenance     equipe_maintenance?       @relation(fields: [idEquipe], references: [idEquipe], onDelete: Restrict, onUpdate: Restrict, map: "technicien_ibfk_equipe")
-
+   utilisateur utilisateur? @relation("UtilisateurTechnicien")
   @@index([idEquipe], map: "technicien_ibfk_equipe")
 }
 
@@ -1298,7 +1298,71 @@ model securite_intervention {
 
   @@index([idIntervention])
 }
+model utilisateur {
+  idUtilisateur     Int       @id @default(autoincrement())
+  nom               String    @db.VarChar(100)
+  prenom            String?   @db.VarChar(100)
+  email             String    @unique @db.VarChar(150)
+  motDePasse        String    @db.VarChar(255)
+  actif             Boolean   @default(true)
+  dateCreation      DateTime  @default(now())
+  derniereConnexion DateTime?
 
+  idRole            Int
+  idTechnicien      Int?      @unique
+
+  role              role_gmao   @relation(fields: [idRole], references: [idRole], onDelete: Restrict, onUpdate: Cascade)
+  technicien        technicien? @relation("UtilisateurTechnicien", fields: [idTechnicien], references: [idTechnicien], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([idRole])
+  @@index([idTechnicien])
+  @@index([email])
+  @@map("utilisateur")
+}
+
+model role_gmao {
+  idRole        Int      @id @default(autoincrement())
+  code          String   @unique @db.VarChar(50)
+  libelle       String   @db.VarChar(100)
+  description   String?  @db.Text
+  actif         Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  utilisateurs  utilisateur[]
+  privileges    role_privilege_gmao[]
+
+  @@map("role_gmao")
+}
+
+model privilege_gmao {
+  idPrivilege  Int      @id @default(autoincrement())
+  code         String   @unique @db.VarChar(100)
+  libelle      String   @db.VarChar(180)
+  module       String   @db.VarChar(50)
+  description  String?  @db.Text
+  actif        Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  roles        role_privilege_gmao[]
+
+  @@index([module])
+  @@map("privilege_gmao")
+}
+
+model role_privilege_gmao {
+  idRole       Int
+  idPrivilege  Int
+  createdAt    DateTime @default(now())
+
+  role          role_gmao      @relation(fields: [idRole], references: [idRole], onDelete: Cascade, onUpdate: Cascade)
+  privilege     privilege_gmao @relation(fields: [idPrivilege], references: [idPrivilege], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([idRole, idPrivilege])
+  @@index([idPrivilege])
+  @@map("role_privilege_gmao")
+}
 enum CategorieArticle {
   PIECE_RECHANGE
   CONSOMMABLE

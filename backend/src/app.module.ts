@@ -29,6 +29,7 @@ import { TypeEquipementModule } from './modules/type-equipement/type-equipement.
 import { FabricantModule } from './modules/fabricant/fabricant.module';
 import { MarqueModule } from './modules/marque/marque.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { AuthModule } from './modules/auth/auth.module';
 @Module({
   imports: [PrismaModule, FamilleModule,ReservationsModule,ModeleModule,EtatModeleModule,ArborescenceModule, PointsStructureModule,UniteArticleModule, ArticleModule,MaterielModule, MagasinModule,InventairesPreparesModule, InventaireModule,StockModule,DemandesTransfertModule, ReapprovisionnementModule,GammeModule,PlanPreventifPredefiniModule,PlanPreventifModule,
     HistoriqueDeclenchementPreventifModule,
@@ -39,6 +40,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     FabricantModule,
     MarqueModule,
     DashboardModule,
+    AuthModule,
     DemandeInterventionModule,],
   controllers: [AppController],
   providers: [AppService],

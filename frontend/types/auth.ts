@@ -232,6 +232,12 @@ export type User = {
   permissions: Permission[];
   avatar?: string | null;
   createdAt?: string;
+  idUtilisateur?: number;
+nom?: string | null;
+prenom?: string | null;
+roleLabel?: string;
+actif?: boolean;
+derniereConnexion?: string | null;
 };
 
 export type LoginCredentials = {
@@ -241,7 +247,8 @@ export type LoginCredentials = {
 
 export type LoginResponse = {
   user: User;
-  token: string;
+  token: string ;
+  accessToken?: string;
 };
 
 export type AuthContextType = {

@@ -245,50 +245,9 @@ export default function Sidebar() {
         </nav>
 
         {/* FOOTER */}
-        <div className="relative shrink-0 border-t border-white/10 bg-[#081f2d]/80 px-6 py-4 backdrop-blur space-y-3">
-          {/* User Info */}
-          {user && (
-            <div className="rounded-xl bg-white/10 p-3">
-              <p className="text-[11px] font-bold text-white/70 uppercase tracking-wider mb-1">
-                Utilisateur connecté
-              </p>
-              <p className="text-[12px] font-bold text-white truncate">
-                {user.fullName}
-              </p>
-              <p className="text-[11px] text-white/50 truncate">
-                {user.email}
-              </p>
-              <p className="text-[11px] text-cyan-200/70 mt-1.5">
-                Rôle: <span className="font-semibold">{user.role}</span>
-              </p>
-            </div>
-          )}
-
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            disabled={isLoggingOut || isLoading}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-100 hover:text-red-50 text-[13px] font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <LogOut size={16} />
-            <span>Déconnexion</span>
-          </button>
-
-          {/* Version */}
-          <div className="flex items-center gap-3 pt-2 border-t border-white/10">
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/10">
-              <Box size={18} className="text-[#81C3D7]" />
-            </div>
-
-            <div>
-              <p className="text-[13px] font-bold text-white">GMAO v1.0.0</p>
-              <p className="mt-0.5 text-[11px] font-medium text-white/40">
-                © 2025 Maintenance
-              </p>
-            </div>
-          </div>
+       
         </div>
-      </div>
+      
     </aside>
   );
 }
