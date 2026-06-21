@@ -28,8 +28,12 @@ import { UpsertCompteRenduInterventionDto } from './dto/upsert-compte-rendu-inte
 import { FournituresDisponiblesDto } from './dto/fournitures-disponibles.dto';
 import { InterventionConsommationService } from './intervention-consommation.service';
 import { InterventionService } from './intervention.service';
-
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('interventions')
+@UseGuards(JwtAuthGuard)
+
 export class InterventionController {
   constructor(
     private readonly service: InterventionService,
@@ -119,21 +123,24 @@ export class InterventionController {
   /* =========================
      LISTE / CRUD
   ========================= */
-
-  @Get()
-  findAll(
-    @Query('etat') etat?: string,
-    @Query('typeMaintenance') typeMaintenance?: string,
-    @Query('idMateriel') idMateriel?: string,
-    @Query('idEquipe') idEquipe?: string,
-  ) {
-    return this.service.findAll({
+@Get()
+findAll(
+  @CurrentUser() user: any,
+  @Query('etat') etat?: string,
+  @Query('typeMaintenance') typeMaintenance?: string,
+  @Query('idMateriel') idMateriel?: string,
+  @Query('idEquipe') idEquipe?: string,
+) {
+  return this.service.findAll(
+    {
       etat,
       typeMaintenance,
       idMateriel: idMateriel ? Number(idMateriel) : undefined,
       idEquipe: idEquipe ? Number(idEquipe) : undefined,
-    });
-  }
+    },
+    user,
+  );
+}
 
   /* =========================
      OCCUPATIONS
@@ -406,4 +413,5 @@ deleteAffectationTechnicien(
       commentaire: 'Clôture depuis ancienne route',
     });
   }
+  
 }

@@ -13,7 +13,8 @@ import {
   Search,
   Warehouse,
 } from 'lucide-react';
-
+import { useAuth } from '@/context/AuthContext';
+import { UserRole } from '@/types/auth';
 import { MouvementStockTable } from '@/features/stock-entrees/components/MouvementStockTable';
 import { getMouvementsStock } from '@/features/stock-entrees/services/stock.service';
 import type { MouvementStock } from '@/features/stock-entrees/types/stock';
@@ -46,7 +47,10 @@ export default function MouvementsStockPage() {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('TOUS');
+  const { user } = useAuth();
 
+const canCreateEntree =
+  user?.role === UserRole.MAGASINIER || user?.role === UserRole.ADMIN;
   async function loadMouvements() {
     try {
       setLoading(true);
@@ -180,14 +184,16 @@ export default function MouvementsStockPage() {
                 Actualiser
               </button>
 
-              <button
-                type="button"
-                onClick={() => router.push('/stock/entrees/nouvelle')}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#0f3d56] px-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#0b2f44]"
-              >
-                <Plus size={17} />
-                Nouvelle entrée
-              </button>
+             {canCreateEntree && (
+  <button
+    type="button"
+    onClick={() => router.push('/stock/entrees/nouvelle')}
+    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#0f3d56] px-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#0b2f44]"
+  >
+    <Plus size={17} />
+    Nouvelle entrée
+  </button>
+)}
             </div>
           </div>
         </section>

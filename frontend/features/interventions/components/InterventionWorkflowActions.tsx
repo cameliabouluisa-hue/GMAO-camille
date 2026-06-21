@@ -15,7 +15,8 @@ import {
 import { appPrimaryButtonClassName } from '@/components/app-section-layout';
 import type { Intervention } from '../types/intervention.types';
 import { EtatBadge, formatEtat } from './InterventionTable';
-
+import { useAuth } from '@/context/AuthContext';
+import { Permission } from '@/types/auth';
 type Props = {
   intervention: Intervention;
   actionLoading?: boolean;
@@ -53,28 +54,49 @@ export function InterventionWorkflowActions({
   onArchiver,
 }: Props) {
   const etat = (intervention.etat || '').toUpperCase();
+const { hasPermission } = useAuth();
 
-  const canAskValidation = etat === 'EN_PREPARATION';
+const canUpdateIntervention = hasPermission(Permission.INTERVENTION_UPDATE);
+const canStartIntervention = hasPermission(Permission.INTERVENTION_START);
+const canCompleteIntervention = hasPermission(Permission.INTERVENTION_COMPLETE);
+const canCloseIntervention = hasPermission(Permission.INTERVENTION_CLOSE);
+const canAskValidation =
+  etat === 'EN_PREPARATION' && canUpdateIntervention;
 
-  const canValidate = etat === 'ATTENTE_VALIDATION';
-  const canRefuse = etat === 'ATTENTE_VALIDATION';
+const canValidate =
+  etat === 'ATTENTE_VALIDATION' && canUpdateIntervention;
 
-  const canStart = ['VALIDEE', 'ATTENTE_REALISATION'].includes(etat);
+const canRefuse =
+  etat === 'ATTENTE_VALIDATION' && canUpdateIntervention;
 
-  const canWaitSupply = etat === 'VALIDEE';
+const canStart =
+  ['VALIDEE', 'ATTENTE_REALISATION'].includes(etat) &&
+  canStartIntervention;
 
-  const canSuppliesAvailable = etat === 'ATTENTE_FOURNITURE';
+const canWaitSupply =
+  etat === 'VALIDEE' && canUpdateIntervention;
 
-  const canFinish = etat === 'EN_COURS';
+const canSuppliesAvailable =
+  etat === 'ATTENTE_FOURNITURE' && canUpdateIntervention;
 
-  const canAcceptWorks = etat === 'TERMINE';
-  const canRefuseWorks = etat === 'TERMINE';
+const canFinish =
+  etat === 'EN_COURS' && canCompleteIntervention;
 
-  const canResume = etat === 'TRAVAUX_REFUSES';
+const canAcceptWorks =
+  etat === 'TERMINE' && canCloseIntervention;
 
-  const canSettle = etat === 'TRAVAUX_ACCEPTES';
+const canRefuseWorks =
+  etat === 'TERMINE' && canCloseIntervention;
 
-  const canCancel = [
+const canResume =
+  etat === 'TRAVAUX_REFUSES' && canStartIntervention;
+
+const canSettle =
+  etat === 'TRAVAUX_ACCEPTES' && canCloseIntervention;
+
+const canCancel =
+  canUpdateIntervention &&
+  [
     'EN_PREPARATION',
     'ATTENTE_VALIDATION',
     'VALIDEE',
@@ -83,8 +105,8 @@ export function InterventionWorkflowActions({
     'EN_COURS',
   ].includes(etat);
 
-  const canArchive = etat === 'SOLDE';
-
+const canArchive =
+  etat === 'SOLDE' && canCloseIntervention;
   const hasActions =
     canAskValidation ||
     canValidate ||
@@ -123,7 +145,7 @@ export function InterventionWorkflowActions({
               disabled={actionLoading}
               onClick={onDemanderValidation}
               icon={<Clock3 size={18} />}
-              label="Demander validation"
+              label="Valider l’OT"
               variant="secondary"
             />
           )}

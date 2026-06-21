@@ -121,12 +121,8 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     Permission.DASHBOARD_GENERAL_VIEW,
     Permission.DASHBOARD_MAINTENANCE_VIEW,
 
-    Permission.EQUIPEMENTS_VIEW,
     Permission.MATERIEL_VIEW,
     Permission.MODELE_VIEW,
-    Permission.POINT_STRUCTURE_VIEW,
-    Permission.POINT_MESURE_VIEW,
-
     Permission.RELEVE_MESURE_VIEW,
     Permission.RELEVE_MESURE_CREATE,
 
@@ -141,7 +137,7 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     // Consultation pièces + consommation sur intervention
     Permission.STOCK_VIEW,
     Permission.ARTICLE_VIEW,
-    Permission.MAGASIN_VIEW,
+  
     Permission.MOUVEMENT_STOCK_VIEW,
     Permission.STOCK_CONSUMPTION_DECLARE,
     Permission.STOCK_CONSUMPTION_VIEW,
@@ -152,7 +148,7 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
 
     Permission.EQUIPEMENTS_VIEW,
     Permission.MATERIEL_VIEW,
-    Permission.POINT_STRUCTURE_VIEW,
+    
 
     Permission.MAINTENANCE_VIEW,
     Permission.DI_VIEW_OWN,
@@ -162,8 +158,15 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
   ]),
 
   [UserRole.MAGASINIER]: uniquePermissions([
+
     Permission.DASHBOARD_GENERAL_VIEW,
+    
     Permission.DASHBOARD_STOCK_VIEW,
+
+    
+    Permission.EQUIPEMENTS_VIEW,
+    Permission.MATERIEL_VIEW,
+    Permission.ARBORESCENCE_VIEW,
 
     Permission.STOCK_VIEW,
 

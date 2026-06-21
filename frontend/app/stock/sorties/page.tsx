@@ -21,7 +21,8 @@ import type {
   StockSortie,
   StockSortieLigne,
 } from '@/features/stock-sorties/types/stock-sortie';
-
+import { useAuth } from '@/context/AuthContext';
+import { UserRole } from '@/types/auth';
 type StatutFilter = 'all' | 'VALIDEE' | 'BROUILLON' | 'ANNULEE';
 
 function getLignes(sortie: StockSortie): StockSortieLigne[] {
@@ -80,7 +81,10 @@ export default function StockSortiesPage() {
 
   const [search, setSearch] = useState('');
   const [statut, setStatut] = useState<StatutFilter>('all');
+const { user } = useAuth();
 
+const canCreateSortie =
+  user?.role === UserRole.MAGASINIER || user?.role === UserRole.ADMIN;
   const loadSorties = useCallback(async () => {
     try {
       setLoading(true);
@@ -165,14 +169,16 @@ export default function StockSortiesPage() {
               Actualiser
             </button>
 
-            <button
-              type="button"
-              onClick={() => router.push('/stock/sorties/nouvelle')}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#06475a] px-5 text-sm font-black text-white shadow-sm transition hover:bg-[#043747]"
-            >
-              <Plus size={18} />
-              Nouvelle sortie
-            </button>
+           {canCreateSortie && (
+  <button
+    type="button"
+    onClick={() => router.push('/stock/sorties/nouvelle')}
+    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#06475a] px-5 text-sm font-black text-white shadow-sm transition hover:bg-[#043747]"
+  >
+    <Plus size={18} />
+    Nouvelle sortie
+  </button>
+)}
           </div>
         </div>
 

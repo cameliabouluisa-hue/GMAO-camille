@@ -31,6 +31,11 @@ export class AuthService {
             },
           },
         },
+        technicien: {
+          include: {
+            equipe_maintenance: true,
+          },
+        },
       },
     });
 
@@ -55,11 +60,15 @@ export class AuthService {
       .filter((item) => item.privilege.actif)
       .map((item) => item.privilege.code);
 
+    const technicienInfo = this.buildTechnicienInfo(utilisateur.technicien);
+
     const payload = {
       sub: utilisateur.idUtilisateur,
       email: utilisateur.email,
       role: utilisateur.role.code,
       permissions,
+      idTechnicien: technicienInfo.idTechnicien,
+      idEquipe: technicienInfo.idEquipe,
     };
 
     const accessToken = await this.jwtService.signAsync(payload);
@@ -88,6 +97,10 @@ export class AuthService {
         permissions,
         actif: utilisateur.actif,
         derniereConnexion: utilisateur.derniereConnexion,
+
+        idTechnicien: technicienInfo.idTechnicien,
+        idEquipe: technicienInfo.idEquipe,
+        equipe: technicienInfo.equipe,
       },
     };
   }
@@ -107,6 +120,11 @@ export class AuthService {
             },
           },
         },
+        technicien: {
+          include: {
+            equipe_maintenance: true,
+          },
+        },
       },
     });
 
@@ -117,6 +135,8 @@ export class AuthService {
     const permissions = utilisateur.role.privileges
       .filter((item) => item.privilege.actif)
       .map((item) => item.privilege.code);
+
+    const technicienInfo = this.buildTechnicienInfo(utilisateur.technicien);
 
     return {
       id: String(utilisateur.idUtilisateur),
@@ -131,10 +151,36 @@ export class AuthService {
       actif: utilisateur.actif,
       dateCreation: utilisateur.dateCreation,
       derniereConnexion: utilisateur.derniereConnexion,
+
+      idTechnicien: technicienInfo.idTechnicien,
+      idEquipe: technicienInfo.idEquipe,
+      equipe: technicienInfo.equipe,
     };
   }
 
   private buildFullName(prenom?: string | null, nom?: string | null) {
     return [prenom, nom].filter(Boolean).join(' ') || 'Utilisateur';
+  }
+
+  private buildTechnicienInfo(technicien?: any | null) {
+    if (!technicien) {
+      return {
+        idTechnicien: null,
+        idEquipe: null,
+        equipe: null,
+      };
+    }
+
+    return {
+      idTechnicien: technicien.idTechnicien,
+      idEquipe: technicien.idEquipe ?? null,
+      equipe: technicien.equipe_maintenance
+        ? {
+            idEquipe: technicien.equipe_maintenance.idEquipe,
+            code: technicien.equipe_maintenance.code,
+            libelle: technicien.equipe_maintenance.libelle,
+          }
+        : null,
+    };
   }
 }

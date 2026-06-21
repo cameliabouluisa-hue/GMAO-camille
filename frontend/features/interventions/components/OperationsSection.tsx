@@ -18,6 +18,7 @@ import type {
 import { formatNumber } from './InterventionTable';
 
 type Props = {
+  canManageOperations: boolean;
   operations?: OperationIntervention[];
   interventionEtat?: string | null;
   loading?: boolean;
@@ -37,6 +38,7 @@ export function OperationsSection({
   operations = [],
   interventionEtat,
   loading = false,
+    canManageOperations,
   onCreate,
   onDelete,
 }: Props) {
@@ -46,7 +48,9 @@ export function OperationsSection({
 
   const etat = (interventionEtat || '').toUpperCase();
 
-  const canEdit = !['SOLDE', 'ARCHIVE', 'ANNULE'].includes(etat);
+  const canEdit =
+  canManageOperations &&
+  ['EN_PREPARATION', 'ATTENTE_VALIDATION', 'VALIDEE'].includes(etat);
 
   async function handleSubmit() {
     if (!form.libelle.trim()) {

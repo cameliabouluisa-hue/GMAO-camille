@@ -66,9 +66,9 @@ export type ModeleDetail = Omit<
 
 type Props = {
   modele: ModeleDetail;
-  refreshing?: boolean;
+  refreshing: boolean;
   onRefresh: () => void;
-  onEdit: () => void;
+  onEdit?: () => void;
 };
 
 type TabId = 'general' | 'preventif';
@@ -253,14 +253,15 @@ export default function ModeleDetailCard({
               Actualiser
             </button>
 
-            <button
-              type="button"
-              onClick={onEdit}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-bold text-[#06475a] transition hover:bg-slate-100"
-            >
-              <Pencil size={16} />
-              Modifier
-            </button>
+           {onEdit && (
+  <button
+    type="button"
+    onClick={onEdit}
+    className="..."
+  >
+    Modifier
+  </button>
+)}
           </div>
         </div>
       </div>

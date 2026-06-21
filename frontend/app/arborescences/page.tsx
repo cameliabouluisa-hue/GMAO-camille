@@ -5,6 +5,8 @@ import {
   getArborescenceGeographique,
   getArborescenceTechnique,
 } from '@/features/arborescences/services/arborescence.service';
+import PermissionRoute from '@/components/PermissionRoute';
+import { Permission } from '@/types/auth';
 
 export default async function ArborescencesPage() {
   const [geographique, technique, familles] = await Promise.all([
@@ -13,7 +15,8 @@ export default async function ArborescencesPage() {
     getArborescenceFamilles(),
   ]);
 
-  return (
+return (
+  <PermissionRoute permission={Permission.ARBORESCENCE_VIEW}>
     <main className="min-h-screen bg-slate-50 p-6 md:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
         <ArborescenceTabs
@@ -23,5 +26,6 @@ export default async function ArborescencesPage() {
         />
       </div>
     </main>
-  );
+  </PermissionRoute>
+);
 }

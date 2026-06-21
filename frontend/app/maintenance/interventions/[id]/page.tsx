@@ -34,7 +34,8 @@ import {
   upsertCompteRenduIntervention,
   validerIntervention,
 } from '@/features/interventions/services/intervention.service';
-
+import PermissionRoute from '@/components/PermissionRoute';
+import { Permission } from '@/types/auth';
 import type {
   AffecterEquipeDto,
   AffecterTechnicienDto,
@@ -156,7 +157,14 @@ export default function InterventionDetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f7fb] px-6 py-6">
+   <PermissionRoute
+  permission={[
+    Permission.INTERVENTION_VIEW_ALL,
+    Permission.INTERVENTION_VIEW_ASSIGNED,
+  ]}
+  mode="any"
+>
+  <main className="min-h-screen bg-[#f5f7fb] px-6 py-6">
       <section className="mx-auto max-w-[1350px] space-y-5">
         {loading ? (
           <div className="rounded-[28px] border border-slate-200 bg-white p-10 text-center text-sm font-bold text-slate-500 shadow-sm">
@@ -204,13 +212,18 @@ export default function InterventionDetailPage() {
               }
               onFournituresDisponibles={handleFournituresDisponibles}
               onDemanderValidation={() =>
-                runAction(() =>
-                  demanderValidationIntervention(idIntervention, {
-                    utilisateur: 'Admin',
-                    commentaire: 'Demande validation',
-                  }),
-                )
-              }
+  runAction(async () => {
+    await demanderValidationIntervention(idIntervention, {
+      utilisateur: 'Responsable maintenance',
+      commentaire: 'Validation directe de l’ordre de travail',
+    });
+
+    await validerIntervention(idIntervention, {
+      utilisateur: 'Responsable maintenance',
+      commentaire: 'Ordre de travail validé',
+    });
+  })
+}
               onValider={() =>
                 runAction(() =>
                   validerIntervention(idIntervention, {
@@ -339,5 +352,6 @@ export default function InterventionDetailPage() {
         ) : null}
       </section>
     </main>
+    </PermissionRoute>
   );
 }

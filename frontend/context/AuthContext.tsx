@@ -28,36 +28,34 @@ import {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function normalizeUser(response: LoginResponse): User {
-  const backendUser = response.user;
-
-  return {
-    id: String(backendUser.id ?? backendUser.idUtilisateur),
-    email: backendUser.email,
-    fullName:
-      backendUser.fullName ||
-      [backendUser.prenom, backendUser.nom].filter(Boolean).join(' ') ||
-      'Utilisateur',
-    role: backendUser.role as UserRole,
-    permissions: (backendUser.permissions || []) as Permission[],
-    avatar: backendUser.avatar ?? null,
-    createdAt: backendUser.createdAt,
-  };
-}
-
-function normalizeMe(user: User): User {
+function normalizeUser(user: User): User {
   return {
     id: String(user.id ?? user.idUtilisateur),
+    idUtilisateur: user.idUtilisateur,
     email: user.email,
+    nom: user.nom ?? null,
+    prenom: user.prenom ?? null,
     fullName:
       user.fullName ||
       [user.prenom, user.nom].filter(Boolean).join(' ') ||
       'Utilisateur',
     role: user.role as UserRole,
+    roleLabel: user.roleLabel,
     permissions: (user.permissions || []) as Permission[],
     avatar: user.avatar ?? null,
+    actif: user.actif,
+    idTechnicien: user.idTechnicien ?? null,
+idEquipe: user.idEquipe ?? null,
+equipe: user.equipe ?? null,
     createdAt: user.createdAt,
+    dateCreation: user.dateCreation,
+    derniereConnexion: user.derniereConnexion,
+    
   };
+}
+
+function normalizeLoginResponse(response: LoginResponse): User {
+  return normalizeUser(response.user);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -73,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('Token manquant dans la réponse du serveur.');
     }
 
-    const connectedUser = normalizeUser(response);
+    const connectedUser = normalizeLoginResponse(response);
 
     saveAuthSession(token, connectedUser);
     setUser(connectedUser);
@@ -82,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     clearAuthSession();
     setUser(null);
+    window.location.href = '/auth/login';
   }, []);
 
   const hasPermission = useCallback(
@@ -96,9 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ? permission
         : [permission];
 
-      return permissions.every((item) =>
-        user.permissions.includes(item),
-      );
+      return permissions.every((item) => user.permissions.includes(item));
     },
     [user],
   );
@@ -124,35 +121,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
+    let mounted = true;
+
     async function restoreSession() {
-      try {
-        const token = getStoredToken();
-        const storedUser = getStoredUser();
+      const token = getStoredToken();
 
-        if (!token) {
+      if (!token) {
+        clearAuthSession();
+
+        if (mounted) {
           setUser(null);
-          return;
+          setIsLoading(false);
         }
 
-        if (storedUser) {
-          setUser(storedUser);
-        }
+        return;
+      }
 
+      const storedUser = getStoredUser();
+
+      if (storedUser && mounted) {
+        setUser(normalizeUser(storedUser));
+      }
+
+      try {
         const me = await getMeApi(token);
-        const connectedUser = normalizeMe(me);
 
-        saveAuthSession(token, connectedUser);
-        setUser(connectedUser);
+        if (mounted) {
+          const connectedUser = normalizeUser(me);
+          saveAuthSession(token, connectedUser);
+          setUser(connectedUser);
+        }
       } catch (error) {
         console.error('Erreur restauration session auth :', error);
         clearAuthSession();
-        setUser(null);
+
+        if (mounted) {
+          setUser(null);
+        }
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     }
 
     restoreSession();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const value = useMemo<AuthContextType>(

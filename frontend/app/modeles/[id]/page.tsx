@@ -9,11 +9,24 @@ import ModeleDetailCard, {
 } from '@/features/modeles/components/modele-detail-card';
 
 import { getModeleById } from '@/features/modeles/services/modele.service';
-
+import PermissionRoute from '@/components/PermissionRoute';
+import { useAuth } from '@/context/AuthContext';
+import { Permission } from '@/types/auth';
+function ModeleDetailPermissionWrapper({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <PermissionRoute permission={Permission.MODELE_VIEW}>
+      {children}
+    </PermissionRoute>
+  );
+}
 export default function ModeleDetailPage() {
   const params = useParams();
   const router = useRouter();
-
+const { hasPermission } = useAuth();
   const id = useMemo(() => {
     const rawId = params.id;
     return Number(Array.isArray(rawId) ? rawId[0] : rawId);
@@ -63,6 +76,8 @@ export default function ModeleDetailPage() {
 
   if (loading) {
     return (
+        <ModeleDetailPermissionWrapper>
+
       <main className="min-h-[calc(100vh-96px)] bg-[#f5f7fb] px-5 py-6">
         <div className="mx-auto flex min-h-[420px] max-w-[1180px] items-center justify-center">
           <div className="rounded-[24px] border border-slate-200 bg-white px-10 py-8 text-center shadow-sm">
@@ -74,11 +89,14 @@ export default function ModeleDetailPage() {
           </div>
         </div>
       </main>
+      </ModeleDetailPermissionWrapper>
     );
   }
 
   if (error || !modele) {
     return (
+        <ModeleDetailPermissionWrapper>
+
       <main className="min-h-[calc(100vh-96px)] bg-[#f5f7fb] px-5 py-6">
         <section className="mx-auto max-w-[1180px]">
           <BackButton onClick={() => router.back()} />
@@ -110,10 +128,12 @@ export default function ModeleDetailPage() {
           </div>
         </section>
       </main>
+      </ModeleDetailPermissionWrapper>
     );
   }
 
-  return (
+ return (
+  <ModeleDetailPermissionWrapper>
     <main className="min-h-[calc(100vh-96px)] bg-[#f5f7fb] px-5 py-6">
       <section className="mx-auto max-w-[1180px]">
         <BackButton onClick={() => router.back()} />
@@ -128,11 +148,16 @@ export default function ModeleDetailPage() {
           modele={modele}
           refreshing={refreshing}
           onRefresh={() => loadModele(true)}
-          onEdit={() => router.push(`/modeles/${modele.idModele}/modifier`)}
+          onEdit={
+            hasPermission(Permission.MODELE_UPDATE)
+              ? () => router.push(`/modeles/${modele.idModele}/modifier`)
+              : undefined
+          }
         />
       </section>
     </main>
-  );
+  </ModeleDetailPermissionWrapper>
+);
 }
 
 function BackButton({ onClick }: { onClick: () => void }) {

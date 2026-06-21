@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, ArrowLeft, RefreshCcw } from 'lucide-react';
+import PermissionRoute from '@/components/PermissionRoute';
+import { Permission } from '@/types/auth';
 
 import MaterielForm from '@/features/materiels/components/MaterielForm';
 
@@ -99,6 +101,7 @@ export default function NouveauMaterielPage() {
   }
 
   return (
+  <PermissionRoute permission={Permission.MATERIEL_CREATE}>
     <main className="min-h-[calc(100vh-96px)] bg-[#f5f7fb] px-5 py-6">
       <section className="mx-auto max-w-[1180px] space-y-5">
         <BackButton onClick={() => router.back()} />
@@ -127,7 +130,8 @@ export default function NouveauMaterielPage() {
         )}
       </section>
     </main>
-  );
+  </PermissionRoute>
+);
 }
 
 function BackButton({ onClick }: { onClick: () => void }) {

@@ -21,7 +21,9 @@ import {
   deleteDemandeIntervention,
   getDemandesIntervention,
 } from '@/features/demandes-intervention/services/demande-intervention.service';
-
+import PermissionRoute from '@/components/PermissionRoute';
+import { useAuth } from '@/context/AuthContext';
+import { Permission, UserRole } from '@/types/auth';
 import type { DemandeIntervention } from '@/features/demandes-intervention/types/demande-intervention.types';
 
 import { DemandeInterventionTable } from '@/features/demandes-intervention/components/DemandeInterventionTable';
@@ -51,7 +53,7 @@ export default function DemandesInterventionPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [error, setError] = useState('');
-
+const { user, hasPermission } = useAuth();
   const [search, setSearch] = useState('');
   const [statutFilter, setStatutFilter] = useState<StatutFilter>('TOUS');
   const [prioriteFilter, setPrioriteFilter] =
@@ -226,6 +228,10 @@ export default function DemandesInterventionPage() {
   }
 
   return (
+  <PermissionRoute
+    permission={[Permission.DI_VIEW_ALL, Permission.DI_VIEW_OWN]}
+    mode="any"
+  >
     <main className="min-h-screen bg-[#f5f7fb] px-6 py-6">
       <section className="mx-auto max-w-[1450px] space-y-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -257,14 +263,15 @@ export default function DemandesInterventionPage() {
               />
               Actualiser
             </button>
-
-            <Link
-              href="/maintenance/demandes/nouveau"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#0b3d4f] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#082f3d]"
-            >
-              <Plus size={18} />
-              Nouvelle demande
-            </Link>
+{user?.role === UserRole.DEMANDEUR && hasPermission(Permission.DI_CREATE) && (
+  <Link
+    href="/maintenance/demandes/nouveau"
+    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#06475a] px-5 text-sm font-black text-white shadow-sm transition hover:bg-[#043747]"
+  >
+    <Plus size={18} />
+    Nouvelle demande
+  </Link>
+)}
           </div>
         </div>
 
@@ -389,25 +396,23 @@ export default function DemandesInterventionPage() {
           </div>
         )}
 
-        <DemandeInterventionTable
-          demandes={filteredDemandes}
-          total={demandes.length}
-          loading={loading}
-          actionLoadingId={actionLoadingId}
-          onDelete={handleDelete}
-          canDelete={(demande) =>
-            normalizeDemandeStatut(demande.statut) === 'EN_PREPARATION'
-          }
-          getDetailHref={(demande) =>
-            `/maintenance/demandes/${demande.idDemande}`
-          }
-          getEditHref={(demande) =>
-            `/maintenance/demandes/${demande.idDemande}/modifier`
-          }
-        />
+       <DemandeInterventionTable
+  demandes={filteredDemandes}
+  total={demandes.length}
+  loading={loading}
+  actionLoadingId={actionLoadingId}
+  onDelete={handleDelete}
+  canCreate={hasPermission(Permission.DI_CREATE)}
+  canUpdate={hasPermission(Permission.DI_UPDATE)}
+  canDelete={hasPermission(Permission.DI_DELETE)}
+  canAccept={hasPermission(Permission.DI_ACCEPT)}
+  canRefuse={hasPermission(Permission.DI_REFUSE)}
+  canClose={hasPermission(Permission.DI_CLOSE)}
+/>
       </section>
-    </main>
-  );
+       </main>
+  </PermissionRoute>
+);
 }
 
 function MiniStat({

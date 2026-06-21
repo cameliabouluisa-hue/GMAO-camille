@@ -22,7 +22,9 @@ import {
   getInterventions,
 } from '@/features/interventions/services/intervention.service';
 import type { Intervention } from '@/features/interventions/types/intervention.types';
-
+import PermissionRoute from '@/components/PermissionRoute';
+import { useAuth } from '@/context/AuthContext';
+import { Permission } from '@/types/auth';
 type EtatFilter =
   | 'TOUS'
   | 'EN_PREPARATION'
@@ -47,7 +49,7 @@ export default function InterventionsPage() {
   const [search, setSearch] = useState('');
   const [etatFilter, setEtatFilter] = useState<EtatFilter>('TOUS');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('TOUS');
-
+const { hasPermission } = useAuth();
   const loadInterventions = useCallback(async () => {
     try {
       setLoading(true);
@@ -147,6 +149,13 @@ export default function InterventionsPage() {
   }
 
   return (
+  <PermissionRoute
+    permission={[
+      Permission.INTERVENTION_VIEW_ALL,
+      Permission.INTERVENTION_VIEW_ASSIGNED,
+    ]}
+    mode="any"
+  >
     <main className="min-h-screen bg-[#f5f7fb] px-6 py-6">
       <section className="mx-auto max-w-[1450px] space-y-6">
         <PageHeader
@@ -154,22 +163,26 @@ export default function InterventionsPage() {
           title="Interventions"
           description="Consultez et pilotez les ordres de travail correctifs, préventifs et conditionnels."
           actions={[
-            {
-              type: 'button',
-              label: 'Actualiser',
-              icon: <RefreshCcw size={18} />,
-              onClick: loadInterventions,
-              variant: 'secondary',
-              loading: loading,
-            },
-            {
-              type: 'link',
-              label: 'Nouvelle intervention',
-              href: '/maintenance/interventions/nouveau',
-              icon: <Plus size={18} />,
-              variant: 'primary',
-            },
-          ]}
+  {
+    type: 'button',
+    label: 'Actualiser',
+    icon: <RefreshCcw size={18} />,
+    onClick: loadInterventions,
+    variant: 'secondary',
+    loading: loading,
+  },
+  ...(hasPermission(Permission.INTERVENTION_CREATE)
+    ? [
+        {
+          type: 'link' as const,
+          label: 'Nouvelle intervention',
+          href: '/maintenance/interventions/nouveau',
+          icon: <Plus size={18} />,
+          variant: 'primary' as const,
+        },
+      ]
+    : []),
+]}
         />
 
         <div className="grid gap-4 md:grid-cols-5">
@@ -252,14 +265,17 @@ export default function InterventionsPage() {
           </div>
         )}
 
-        <InterventionTable
-          interventions={filteredInterventions}
-          total={interventions.length}
-          loading={loading}
-          actionLoadingId={actionLoadingId}
-          onDelete={handleDelete}
-        />
+       <InterventionTable
+  interventions={filteredInterventions}
+  total={interventions.length}
+  loading={loading}
+  actionLoadingId={actionLoadingId}
+  onDelete={handleDelete}
+  canUpdate={hasPermission(Permission.INTERVENTION_UPDATE)}
+  canDelete={hasPermission(Permission.INTERVENTION_DELETE)}
+/>
       </section>
-    </main>
-  );
+       </main>
+  </PermissionRoute>
+);
 }

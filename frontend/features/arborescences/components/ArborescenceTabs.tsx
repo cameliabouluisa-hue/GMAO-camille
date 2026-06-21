@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { Building, FolderTree, Wrench } from 'lucide-react';
 
+import { useAuth } from '@/context/AuthContext';
+import { Permission } from '@/types/auth';
+
 import TreeView from './TreeView';
 import {
   ArborescenceMode,
@@ -21,6 +24,11 @@ export default function ArborescenceTabs({
   familles,
 }: Props) {
   const [mode, setMode] = useState<ArborescenceMode>('GEOGRAPHIQUE');
+  const { hasPermission } = useAuth();
+
+  const canOpenPointStructureDetail = hasPermission(
+    Permission.POINT_STRUCTURE_VIEW,
+  );
 
   const data =
     mode === 'GEOGRAPHIQUE'
@@ -84,7 +92,11 @@ export default function ArborescenceTabs({
         </div>
       </div>
 
-      <TreeView data={data} mode={mode} />
+      <TreeView
+        data={data}
+        mode={mode}
+        canOpenPointStructureDetail={canOpenPointStructureDetail}
+      />
     </section>
   );
 }

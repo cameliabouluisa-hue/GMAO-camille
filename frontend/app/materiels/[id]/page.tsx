@@ -7,7 +7,8 @@ import { AlertTriangle, ArrowLeft, HardDrive, RefreshCcw } from 'lucide-react';
 import MaterielDetailCard from '@/features/materiels/components/MaterielDetail';
 import { getMateriel } from '@/features/materiels/services/materiel.service';
 import type { Materiel } from '@/features/materiels/types/materiel';
-
+import PermissionRoute from '@/components/PermissionRoute';
+import { Permission } from '@/types/auth';
 export default function MaterielDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -71,7 +72,8 @@ export default function MaterielDetailPage() {
     router.push(`/materiels/${materiel.idMateriel}/modifier`);
   }
 
-  return (
+ return (
+  <PermissionRoute permission={Permission.MATERIEL_VIEW}>
     <main className="min-h-[calc(100vh-96px)] bg-[#f5f7fb] px-5 py-6">
       <section className="mx-auto max-w-[1180px] space-y-5">
         <BackButton onClick={() => router.back()} />
@@ -100,7 +102,8 @@ export default function MaterielDetailPage() {
         )}
       </section>
     </main>
-  );
+  </PermissionRoute>
+);
 }
 
 function BackButton({ onClick }: { onClick: () => void }) {

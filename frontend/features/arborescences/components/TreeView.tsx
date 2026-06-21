@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   Box,
   Boxes,
@@ -25,6 +25,7 @@ import {
 type Props = {
   data: ArborescenceNode[];
   mode: ArborescenceMode;
+  canOpenPointStructureDetail: boolean;
 };
 
 function getNodeIcon(type?: string | null) {
@@ -114,7 +115,14 @@ function getNodeKey(node: ArborescenceNode) {
   return node.key || `${node.type}-${node.id}`;
 }
 
-function getNodeHref(node: ArborescenceNode) {
+function getNodeHref(
+  node: ArborescenceNode,
+  canOpenPointStructureDetail: boolean,
+) {
+  if (!canOpenPointStructureDetail) {
+    return null;
+  }
+
   switch (node.type) {
     case 'FAMILLE':
       return `/familles/${node.id}`;
@@ -166,7 +174,11 @@ function filterTree(
     .filter((node): node is ArborescenceNode => Boolean(node));
 }
 
-export default function TreeView({ data, mode }: Props) {
+export default function TreeView({
+  data,
+  mode,
+  canOpenPointStructureDetail,
+}: Props) {
   const [search, setSearch] = useState('');
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
 
@@ -250,23 +262,29 @@ export default function TreeView({ data, mode }: Props) {
             <h3 className="text-lg font-black text-slate-950">
               {getModeLabel(mode)}
             </h3>
+
+            <p className="mt-1 text-sm font-semibold text-slate-500">
+              Consultez l’organisation des équipements sous forme hiérarchique.
+            </p>
           </div>
         </div>
 
         {filteredData.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-10 text-center text-sm font-bold text-slate-400">
-            Aucun élément trouvé.
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
+            <p className="text-sm font-bold text-slate-500">
+              Aucun élément trouvé.
+            </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {filteredData.map((node) => (
-              <TreeNodeRow
+              <TreeNode
                 key={getNodeKey(node)}
                 node={node}
                 level={0}
                 expandedKeys={expandedKeys}
                 onToggle={toggleNode}
-                forceExpanded={Boolean(search.trim())}
+                canOpenPointStructureDetail={canOpenPointStructureDetail}
               />
             ))}
           </div>
@@ -276,100 +294,107 @@ export default function TreeView({ data, mode }: Props) {
   );
 }
 
-function TreeNodeRow({
+function TreeNode({
   node,
   level,
   expandedKeys,
   onToggle,
-  forceExpanded,
+  canOpenPointStructureDetail,
 }: {
   node: ArborescenceNode;
   level: number;
   expandedKeys: Set<string>;
   onToggle: (key: string) => void;
-  forceExpanded: boolean;
+  canOpenPointStructureDetail: boolean;
 }) {
-  const router = useRouter();
-
   const children = getChildren(node);
-  const key = getNodeKey(node);
   const hasChildren = children.length > 0;
-  const isExpanded = forceExpanded || expandedKeys.has(key);
-  const visual = getNodeIcon(node.type);
-  const href = getNodeHref(node);
+  const key = getNodeKey(node);
+  const isExpanded = expandedKeys.has(key);
+  const label = getNodeLabel(node);
+  const { icon, iconClass } = getNodeIcon(node.type);
+  const href = getNodeHref(node, canOpenPointStructureDetail);
 
-  function handleOpen() {
-    if (!href) return;
-    router.push(href);
-  }
-
-  return (
-    <div className="space-y-2">
+  const content = (
+    <div
+      className={`flex min-h-12 flex-1 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition ${
+        href ? 'hover:border-[#06475a]/30 hover:bg-cyan-50/40' : ''
+      }`}
+    >
       <div
-        role={href ? 'button' : undefined}
-        tabIndex={href ? 0 : undefined}
-        onClick={handleOpen}
-        onKeyDown={(event) => {
-          if (!href) return;
-
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            router.push(href);
-          }
-        }}
-        className={[
-          'rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:bg-slate-50',
-          href ? 'cursor-pointer hover:border-[#06475a]/30' : '',
-        ].join(' ')}
-        style={{ marginLeft: level > 0 ? Math.min(level * 30, 120) : 0 }}
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconClass}`}
       >
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            disabled={!hasChildren}
-            onClick={(event) => {
-              event.stopPropagation();
-              onToggle(key);
-            }}
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${
-              hasChildren
-                ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                : 'bg-slate-50 text-slate-300'
-            }`}
-          >
-            {hasChildren ? (
-              isExpanded ? (
-                <ChevronDown size={18} />
-              ) : (
-                <ChevronRight size={18} />
-              )
-            ) : (
-              <span className="h-2 w-2 rounded-full bg-slate-300" />
-            )}
-          </button>
+        {icon}
+      </div>
 
-          <div
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${visual.iconClass}`}
-          >
-            {visual.icon}
-          </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-black text-slate-900">{label}</p>
 
-          <p className="min-w-0 flex-1 break-words text-sm font-black text-slate-950">
-            {getNodeLabel(node)}
-          </p>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          {node.code && (
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-black text-slate-500">
+              {node.code}
+            </span>
+          )}
+
+          {node.type && (
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-black text-slate-500">
+              {node.type}
+            </span>
+          )}
         </div>
       </div>
 
+      {!href && (
+        <span className="text-xs font-bold text-slate-400">
+          Consultation seule
+        </span>
+      )}
+    </div>
+  );
+
+  return (
+    <div>
+      <div
+        className="flex items-start gap-2"
+        style={{ paddingLeft: `${level * 24}px` }}
+      >
+        <button
+          type="button"
+          onClick={() => hasChildren && onToggle(key)}
+          disabled={!hasChildren}
+          className="mt-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent"
+        >
+          {hasChildren ? (
+            isExpanded ? (
+              <ChevronDown size={18} />
+            ) : (
+              <ChevronRight size={18} />
+            )
+          ) : (
+            <span className="h-2 w-2 rounded-full bg-slate-300" />
+          )}
+        </button>
+
+        {href ? (
+          <Link href={href} className="block flex-1">
+            {content}
+          </Link>
+        ) : (
+          <div className="flex-1">{content}</div>
+        )}
+      </div>
+
       {hasChildren && isExpanded && (
-        <div className="space-y-2">
+        <div className="mt-2 space-y-2">
           {children.map((child) => (
-            <TreeNodeRow
+            <TreeNode
               key={getNodeKey(child)}
               node={child}
               level={level + 1}
               expandedKeys={expandedKeys}
               onToggle={onToggle}
-              forceExpanded={forceExpanded}
+              canOpenPointStructureDetail={canOpenPointStructureDetail}
             />
           ))}
         </div>

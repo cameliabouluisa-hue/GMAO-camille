@@ -9,7 +9,14 @@ type Props = {
   total: number;
   loading?: boolean;
   actionLoadingId?: number | null;
-  onDelete?: (intervention: Intervention) => void;
+  onDelete?: (intervention: Intervention) => void | Promise<void>;
+
+  canCreate?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
+
+  canViewAll?: boolean;
+  canViewAssigned?: boolean;
 };
 
 export function InterventionTable({
@@ -18,6 +25,9 @@ export function InterventionTable({
   loading = false,
   actionLoadingId = null,
   onDelete,
+  canCreate = false,
+  canUpdate = false,
+  canDelete = false,
 }: Props) {
   return (
     <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
@@ -37,7 +47,7 @@ export function InterventionTable({
           Chargement des interventions...
         </div>
       ) : interventions.length === 0 ? (
-        <EmptyState />
+        <EmptyState canCreate={canCreate} />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1280px] border-collapse text-left">
@@ -120,27 +130,31 @@ export function InterventionTable({
 
                     <td className="px-5 py-4 align-middle">
                       <div className="flex justify-end gap-2">
-                        <ActionButton
-                          href={`/maintenance/interventions/${intervention.idIntervention}`}
-                          icon={<Eye size={16} />}
-                          label="Voir"
-                        />
-                        <ActionButton
-                          href={`/maintenance/interventions/${intervention.idIntervention}/modifier`}
-                          icon={<Pencil size={16} />}
-                          label="Modifier"
-                        />
-                        {onDelete && (
-                          <button
-                            type="button"
-                            disabled={isActionLoading}
-                            onClick={() => onDelete(intervention)}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                            title="Supprimer"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        )}
+                       <ActionButton
+  href={`/maintenance/interventions/${intervention.idIntervention}`}
+  icon={<Eye size={16} />}
+  label="Voir"
+/>
+
+{canUpdate && (
+  <ActionButton
+    href={`/maintenance/interventions/${intervention.idIntervention}/modifier`}
+    icon={<Pencil size={16} />}
+    label="Modifier"
+  />
+)}
+
+{canDelete && onDelete && (
+  <button
+    type="button"
+    disabled={isActionLoading}
+    onClick={() => onDelete(intervention)}
+    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+    title="Supprimer"
+  >
+    <Trash2 size={16} />
+  </button>
+)}
                       </div>
                     </td>
                   </tr>
@@ -219,24 +233,29 @@ function ActionButton({
   );
 }
 
-function EmptyState() {
+function EmptyState({ canCreate }: { canCreate: boolean }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
         <FileText size={24} />
       </div>
+
       <h3 className="mt-4 text-lg font-black text-slate-900">
-        Aucune intervention trouvee
+        Aucune intervention trouvée
       </h3>
+
       <p className="mt-2 max-w-md text-sm font-medium text-slate-500">
-        Modifiez les filtres ou creez une intervention.
+        Modifiez les filtres ou consultez les interventions disponibles.
       </p>
-      <Link
-        href="/maintenance/interventions/nouveau"
-        className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#06475a] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#043747]"
-      >
-        Nouvelle intervention
-      </Link>
+
+      {canCreate && (
+        <Link
+          href="/maintenance/interventions/nouveau"
+          className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#06475a] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#043747]"
+        >
+          Nouvelle intervention
+        </Link>
+      )}
     </div>
   );
 }

@@ -1,8 +1,17 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { Eye, FileText, Pencil, Trash2 } from 'lucide-react';
+import {
+  CheckCircle2,
+  Eye,
+  FileText,
+  Pencil,
+  Trash2,
+  XCircle,
+} from 'lucide-react';
 
 import type { DemandeIntervention } from '../types/demande-intervention.types';
+
+type PermissionCheck = boolean | ((demande: DemandeIntervention) => boolean);
 
 type Props = {
   demandes: DemandeIntervention[];
@@ -10,11 +19,21 @@ type Props = {
   loading?: boolean;
   actionLoadingId?: number | null;
 
-  onDelete?: (demande: DemandeIntervention) => void;
-  canDelete?: (demande: DemandeIntervention) => boolean;
+  canCreate?: boolean;
+  canUpdate?: PermissionCheck;
+  canDelete?: PermissionCheck;
+  canAccept?: PermissionCheck;
+  canRefuse?: PermissionCheck;
+  canClose?: PermissionCheck;
+
+  onDelete?: (demande: DemandeIntervention) => void | Promise<void>;
+  onAccept?: (demande: DemandeIntervention) => void | Promise<void>;
+  onRefuse?: (demande: DemandeIntervention) => void | Promise<void>;
+  onClose?: (demande: DemandeIntervention) => void | Promise<void>;
 
   getDetailHref?: (demande: DemandeIntervention) => string;
   getEditHref?: (demande: DemandeIntervention) => string;
+  createHref?: string;
 };
 
 export function DemandeInterventionTable({
@@ -22,12 +41,24 @@ export function DemandeInterventionTable({
   total,
   loading = false,
   actionLoadingId = null,
+
+  canCreate = false,
+  canUpdate = false,
+  canDelete = false,
+  canAccept = false,
+  canRefuse = false,
+  canClose = false,
+
   onDelete,
-  canDelete = (demande) =>
-    normalizeDemandeStatut(demande.statut) === 'EN_PREPARATION',
+  onAccept,
+  onRefuse,
+  onClose,
+
   getDetailHref = (demande) =>
     `/maintenance/demandes/${demande.idDemande}`,
-  getEditHref,
+  getEditHref = (demande) =>
+    `/maintenance/demandes/${demande.idDemande}/modifier`,
+  createHref = '/maintenance/demandes/nouveau',
 }: Props) {
   return (
     <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
@@ -48,7 +79,7 @@ export function DemandeInterventionTable({
           Chargement des demandes d’intervention...
         </div>
       ) : demandes.length === 0 ? (
-        <EmptyState />
+        <EmptyState canCreate={canCreate} createHref={createHref} />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1250px] border-collapse text-left">
@@ -67,10 +98,31 @@ export function DemandeInterventionTable({
 
             <tbody className="divide-y divide-slate-100">
               {demandes.map((demande) => {
-                const isActionLoading =
-                  actionLoadingId === demande.idDemande;
+                const statut = normalizeDemandeStatut(demande.statut);
+                const isActionLoading = actionLoadingId === demande.idDemande;
 
-                const deleteAllowed = Boolean(onDelete) && canDelete(demande);
+                const updateAllowed =
+                  isAllowed(canUpdate, demande) && statut === 'EN_PREPARATION';
+
+                const deleteAllowed =
+                  Boolean(onDelete) &&
+                  isAllowed(canDelete, demande) &&
+                  statut === 'EN_PREPARATION';
+
+                const acceptAllowed =
+                  Boolean(onAccept) &&
+                  isAllowed(canAccept, demande) &&
+                  statut === 'ATTENTE_PRISE_EN_COMPTE';
+
+                const refuseAllowed =
+                  Boolean(onRefuse) &&
+                  isAllowed(canRefuse, demande) &&
+                  statut === 'ATTENTE_PRISE_EN_COMPTE';
+
+                const closeAllowed =
+                  Boolean(onClose) &&
+                  isAllowed(canClose, demande) &&
+                  statut === 'ATTENTE_REALISATION';
 
                 return (
                   <tr
@@ -135,12 +187,48 @@ export function DemandeInterventionTable({
                           label="Voir"
                         />
 
-                        {getEditHref && (
+                        {updateAllowed && (
                           <ActionButton
                             href={getEditHref(demande)}
                             icon={<Pencil size={16} />}
                             label="Modifier"
                           />
+                        )}
+
+                        {acceptAllowed && (
+                          <button
+                            type="button"
+                            disabled={isActionLoading}
+                            onClick={() => onAccept?.(demande)}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            title="Accepter"
+                          >
+                            <CheckCircle2 size={16} />
+                          </button>
+                        )}
+
+                        {refuseAllowed && (
+                          <button
+                            type="button"
+                            disabled={isActionLoading}
+                            onClick={() => onRefuse?.(demande)}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            title="Refuser"
+                          >
+                            <XCircle size={16} />
+                          </button>
+                        )}
+
+                        {closeAllowed && (
+                          <button
+                            type="button"
+                            disabled={isActionLoading}
+                            onClick={() => onClose?.(demande)}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            title="Clôturer"
+                          >
+                            <CheckCircle2 size={16} />
+                          </button>
                         )}
 
                         {deleteAllowed && (
@@ -165,6 +253,70 @@ export function DemandeInterventionTable({
       )}
     </div>
   );
+}
+
+function EmptyState({
+  canCreate,
+  createHref,
+}: {
+  canCreate: boolean;
+  createHref: string;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+        <FileText size={24} />
+      </div>
+
+      <h3 className="mt-4 text-lg font-black text-slate-900">
+        Aucune demande trouvée
+      </h3>
+
+      <p className="mt-2 max-w-md text-sm font-medium text-slate-500">
+        Modifiez les filtres ou créez une nouvelle demande d’intervention.
+      </p>
+
+      {canCreate && (
+        <Link
+          href={createHref}
+          className="mt-5 inline-flex h-11 items-center justify-center rounded-2xl bg-[#06475a] px-5 text-sm font-black text-white shadow-sm transition hover:bg-[#043747]"
+        >
+          Nouvelle demande
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function ActionButton({
+  href,
+  icon,
+  label,
+}: {
+  href: string;
+  icon: ReactNode;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-[#06475a]"
+      title={label}
+    >
+      {icon}
+    </Link>
+  );
+}
+
+function isAllowed(
+  permission: PermissionCheck,
+  demande: DemandeIntervention,
+) {
+  if (typeof permission === 'function') {
+    return permission(demande);
+  }
+
+  return permission;
 }
 
 function StatutBadge({ statut }: { statut?: string | null }) {
@@ -235,85 +387,35 @@ function CriticiteBadge({ criticite }: { criticite?: string | null }) {
   );
 }
 
-function ActionButton({
-  href,
-  icon,
-  label,
-}: {
-  href: string;
-  icon: ReactNode;
-  label: string;
-}) {
-  return (
-    <Link
-      href={href}
-      title={label}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-[#0b3d4f]"
-    >
-      {icon}
-    </Link>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
-        <FileText size={24} />
-      </div>
-
-      <h3 className="mt-4 text-lg font-black text-slate-900">
-        Aucune demande trouvée
-      </h3>
-
-      <p className="mt-2 max-w-md text-sm font-medium text-slate-500">
-        Modifiez les filtres ou créez une nouvelle demande d’intervention pour
-        signaler un besoin de maintenance.
-      </p>
-
-      <Link
-        href="/maintenance/demandes/nouveau"
-        className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#0b3d4f] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#082f3d]"
-      >
-        Nouvelle demande
-      </Link>
-    </div>
-  );
-}
-
 function normalizeDemandeStatut(statut?: string | null) {
-  if (
-    statut === 'TERMINE' ||
-    statut === 'TRAVAUX_ACCEPTES' ||
-    statut === 'TRAVAUX_REFUSES'
-  ) {
-    return 'ATTENTE_REALISATION';
-  }
-
-  return statut || '';
+  return String(statut || 'EN_PREPARATION').toUpperCase();
 }
 
 function formatStatut(statut?: string | null) {
-  switch (statut) {
+  const value = normalizeDemandeStatut(statut);
+
+  switch (value) {
     case 'EN_PREPARATION':
       return 'En préparation';
     case 'ATTENTE_PRISE_EN_COMPTE':
       return 'Attente prise en compte';
     case 'ATTENTE_REALISATION':
       return 'Attente réalisation';
-    case 'REFUSE':
-      return 'Refusé';
     case 'SOLDE':
-      return 'Soldé';
+      return 'Soldée';
+    case 'REFUSE':
+      return 'Refusée';
     case 'ANNULE':
-      return 'Annulé';
+      return 'Annulée';
     default:
-      return statut || '—';
+      return value.replaceAll('_', ' ').toLowerCase();
   }
 }
 
 function formatPriorite(priorite?: string | null) {
-  switch (priorite) {
+  const value = String(priorite || 'NORMALE').toUpperCase();
+
+  switch (value) {
     case 'BASSE':
       return 'Basse';
     case 'NORMALE':
@@ -323,12 +425,14 @@ function formatPriorite(priorite?: string | null) {
     case 'URGENTE':
       return 'Urgente';
     default:
-      return priorite || '—';
+      return value;
   }
 }
 
 function formatCriticite(criticite?: string | null) {
-  switch (criticite) {
+  const value = String(criticite || 'MOYENNE').toUpperCase();
+
+  switch (value) {
     case 'FAIBLE':
       return 'Faible';
     case 'MOYENNE':
@@ -338,18 +442,16 @@ function formatCriticite(criticite?: string | null) {
     case 'CRITIQUE':
       return 'Critique';
     default:
-      return criticite || '—';
+      return value;
   }
 }
 
-function formatDateTime(value?: string | null) {
+function formatDateTime(value?: string | Date | null) {
   if (!value) return '—';
 
   const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) {
-    return '—';
-  }
+  if (Number.isNaN(date.getTime())) return '—';
 
   return new Intl.DateTimeFormat('fr-FR', {
     dateStyle: 'short',
@@ -357,23 +459,16 @@ function formatDateTime(value?: string | null) {
   }).format(date);
 }
 
-function formatMateriel(demande: DemandeIntervention) {
-  if (!demande.materiel) {
-    return demande.idMateriel ? `Matériel #${demande.idMateriel}` : '—';
-  }
-
-  const code = demande.materiel.code;
-  const libelle = demande.materiel.libelle;
-
-  if (code && libelle) return `${code} — ${libelle}`;
-  if (code) return code;
-  if (libelle) return libelle;
-
-  return demande.idMateriel ? `Matériel #${demande.idMateriel}` : '—';
+function getDemandeCodeLabel(code?: string | null, id?: number | null) {
+  return code || `DI-${String(id || 0).padStart(6, '0')}`;
 }
 
-function getDemandeCodeLabel(code?: string | null, idDemande?: number) {
-  if (code) return code;
-  if (idDemande) return `DI-${String(idDemande).padStart(4, '0')}`;
-  return 'DI';
+function formatMateriel(demande: DemandeIntervention) {
+  const materiel = demande.materiel;
+
+  if (materiel?.code && materiel?.libelle) {
+    return `${materiel.code} - ${materiel.libelle}`;
+  }
+
+  return materiel?.code || materiel?.libelle || '—';
 }

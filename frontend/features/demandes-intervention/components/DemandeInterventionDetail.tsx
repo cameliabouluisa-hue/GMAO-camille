@@ -18,7 +18,8 @@ import {
 import Link from 'next/link';
 
 import type { DemandeIntervention } from '../types/demande-intervention.types';
-
+import { useAuth } from '@/context/AuthContext';
+import { Permission, UserRole } from '@/types/auth';
 type Props = {
   demande: DemandeIntervention;
   actionLoading?: boolean;
@@ -47,6 +48,34 @@ export function DemandeInterventionDetail({
   onRefuser,
 }: Props) {
   const interventionsLiees = getInterventionsLiees(demande);
+  const { user, hasPermission } = useAuth();
+
+const currentStatut = normalizeDemandeStatut(demande.statut);
+
+const isDemandeur = user?.role === UserRole.DEMANDEUR;
+
+const isResponsableOrAdmin =
+  user?.role === UserRole.ADMIN ||
+  user?.role === UserRole.RESPONSABLE_MAINTENANCE;
+
+const canSoumettre =
+  isDemandeur &&
+  hasPermission(Permission.DI_SUBMIT) &&
+  currentStatut === 'EN_PREPARATION';
+
+const canAccepter =
+  isResponsableOrAdmin &&
+  hasPermission(Permission.DI_ACCEPT) &&
+  currentStatut === 'ATTENTE_PRISE_EN_COMPTE';
+
+const canRefuser =
+  isResponsableOrAdmin &&
+  hasPermission(Permission.DI_REFUSE) &&
+  currentStatut === 'ATTENTE_PRISE_EN_COMPTE';
+
+const canViewIntervention =
+  hasPermission(Permission.INTERVENTION_VIEW_ALL) ||
+  hasPermission(Permission.INTERVENTION_VIEW_ASSIGNED);
 
   return (
     <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
@@ -99,12 +128,15 @@ export function DemandeInterventionDetail({
 
       <div className="space-y-6 px-7 py-6">
         <WorkflowActions
-          statut={demande.statut}
-          actionLoading={actionLoading}
-          onSoumettre={onSoumettre}
-          onAccepter={onAccepter}
-          onRefuser={onRefuser}
-        />
+  statut={demande.statut}
+  actionLoading={actionLoading}
+  canSoumettre={canSoumettre}
+  canAccepter={canAccepter}
+  canRefuser={canRefuser}
+  onSoumettre={onSoumettre}
+  onAccepter={onAccepter}
+  onRefuser={onRefuser}
+/>
 
         <AppSection title="Informations générales">
           <AppFieldGrid>
@@ -228,12 +260,14 @@ export function DemandeInterventionDetail({
                       {formatEtatIntervention(intervention.etat)}
                     </span>
 
-                    <Link
-                      href={`/maintenance/interventions/${intervention.idIntervention}`}
-                      className={appSecondaryButtonClassName}
-                    >
-                      Voir OT
-                    </Link>
+                  {canViewIntervention && (
+  <Link
+    href={`/maintenance/interventions/${intervention.idIntervention}`}
+    className={appSecondaryButtonClassName}
+  >
+    Voir OT
+  </Link>
+)}
                   </div>
                 </div>
               ))}
@@ -326,12 +360,18 @@ export function DemandeInterventionDetail({
 function WorkflowActions({
   statut,
   actionLoading,
+  canSoumettre,
+  canAccepter,
+  canRefuser,
   onSoumettre,
   onAccepter,
   onRefuser,
 }: {
   statut?: string | null;
   actionLoading: boolean;
+  canSoumettre: boolean;
+  canAccepter: boolean;
+  canRefuser: boolean;
   onSoumettre: () => void;
   onAccepter: () => void;
   onRefuser: () => void;
@@ -352,7 +392,7 @@ function WorkflowActions({
         </div>
 
         <div className="flex flex-wrap gap-3">
-          {currentStatut === 'EN_PREPARATION' && (
+   {canSoumettre && (
             <button
               type="button"
               disabled={actionLoading}
@@ -364,27 +404,30 @@ function WorkflowActions({
             </button>
           )}
 
-          {currentStatut === 'ATTENTE_PRISE_EN_COMPTE' && (
-            <>
-              <button
-                type="button"
-                disabled={actionLoading}
-                onClick={onAccepter}
-                className={appPrimaryButtonClassName}
-              >
-                <CheckCircle2 size={18} />
-                Accepter
-              </button>
-
-              <button
-                type="button"
-                disabled={actionLoading}
-                onClick={onRefuser}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <XCircle size={18} />
-                Refuser
-              </button>
+        {currentStatut === 'ATTENTE_PRISE_EN_COMPTE' && (canAccepter || canRefuser) && (
+  <>
+            {canAccepter && (
+  <button
+    type="button"
+    disabled={actionLoading}
+    onClick={onAccepter}
+    className={appPrimaryButtonClassName}
+  >
+    <CheckCircle2 size={18} />
+    Accepter
+  </button>
+)}
+              {canRefuser && (
+  <button
+    type="button"
+    disabled={actionLoading}
+    onClick={onRefuser}
+    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+  >
+    <XCircle size={18} />
+    Refuser
+  </button>
+)}
             </>
           )}
 

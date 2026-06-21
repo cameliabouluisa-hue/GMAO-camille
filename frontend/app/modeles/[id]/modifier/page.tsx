@@ -6,6 +6,20 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { ModeleForm, useEditModeleForm } from '@/features/modeles';
 import type { UpdateModelePayload } from '@/features/modeles/types/modele';
 
+
+import PermissionRoute from '@/components/PermissionRoute';
+import { Permission } from '@/types/auth';
+function ModifierModelePermissionWrapper({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <PermissionRoute permission={Permission.MODELE_UPDATE}>
+      {children}
+    </PermissionRoute>
+  );
+}
 export default function ModifierModelePage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -29,6 +43,7 @@ export default function ModifierModelePage() {
 
   if (!modeleId) {
     return (
+        <ModifierModelePermissionWrapper>
       <main className="min-h-screen bg-[#f5f7fb] px-6 py-8">
         <div className="mx-auto max-w-[1180px]">
           <div className="rounded-[24px] border border-red-200 bg-red-50 px-6 py-5 shadow-sm">
@@ -58,11 +73,14 @@ export default function ModifierModelePage() {
           </div>
         </div>
       </main>
+      </ModifierModelePermissionWrapper>
     );
   }
 
   if (loading) {
     return (
+        <ModifierModelePermissionWrapper>
+
       <main className="min-h-screen bg-[#f5f7fb] px-6 py-8">
         <div className="mx-auto flex min-h-[420px] max-w-[1180px] items-center justify-center">
           <div className="rounded-[24px] border border-slate-200 bg-white px-8 py-7 text-center shadow-sm">
@@ -81,11 +99,15 @@ export default function ModifierModelePage() {
           </div>
         </div>
       </main>
+            </ModifierModelePermissionWrapper>
+
     );
   }
 
   if (error || !modele) {
     return (
+        <ModifierModelePermissionWrapper>
+
       <main className="min-h-screen bg-[#f5f7fb] px-6 py-8">
         <div className="mx-auto max-w-[1180px]">
           <div className="rounded-[24px] border border-red-200 bg-red-50 px-6 py-5 shadow-sm">
@@ -115,10 +137,13 @@ export default function ModifierModelePage() {
           </div>
         </div>
       </main>
+                  </ModifierModelePermissionWrapper>
+
     );
   }
 
   return (
+  <ModifierModelePermissionWrapper>
     <ModeleForm
       mode="edit"
       initialData={modele}
@@ -132,5 +157,6 @@ export default function ModifierModelePage() {
         await submitModele(payload as UpdateModelePayload);
       }}
     />
-  );
+  </ModifierModelePermissionWrapper>
+);
 }

@@ -9,6 +9,8 @@ type JwtPayload = {
   email: string;
   role: string;
   permissions: string[];
+  idTechnicien?: number | null;
+  idEquipe?: number | null;
 };
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gmao_bmt_secret_developpement';
@@ -38,6 +40,11 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
             },
           },
         },
+        technicien: {
+          include: {
+            equipe_maintenance: true,
+          },
+        },
       },
     });
 
@@ -49,11 +56,23 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       .filter((item) => item.privilege.actif)
       .map((item) => item.privilege.code);
 
+    const technicien = utilisateur.technicien;
+
     return {
       idUtilisateur: utilisateur.idUtilisateur,
       email: utilisateur.email,
       role: utilisateur.role.code,
       permissions,
+
+      idTechnicien: technicien?.idTechnicien ?? null,
+      idEquipe: technicien?.idEquipe ?? null,
+      equipe: technicien?.equipe_maintenance
+        ? {
+            idEquipe: technicien.equipe_maintenance.idEquipe,
+            code: technicien.equipe_maintenance.code,
+            libelle: technicien.equipe_maintenance.libelle,
+          }
+        : null,
     };
   }
 }

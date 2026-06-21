@@ -101,24 +101,51 @@ const interventionInclude = {
 
 @Injectable()
 export class InterventionService {
+  
   constructor(private readonly prisma: PrismaService) {}
+  
+async findAll(filters: FindAllFilters = {}, user?: any) {
+  const where: Prisma.interventionWhereInput = {};
 
-  async findAll(filters: FindAllFilters = {}) {
-    const where: Prisma.interventionWhereInput = {};
+  if (filters.etat) where.etat = filters.etat;
+  if (filters.typeMaintenance) where.typeMaintenance = filters.typeMaintenance;
+  if (filters.idMateriel) where.idMateriel = filters.idMateriel;
+  if (filters.idEquipe) where.idEquipe = filters.idEquipe;
 
-    if (filters.etat) where.etat = filters.etat;
-    if (filters.typeMaintenance) where.typeMaintenance = filters.typeMaintenance;
-    if (filters.idMateriel) where.idMateriel = filters.idMateriel;
-    if (filters.idEquipe) where.idEquipe = filters.idEquipe;
+  if (user?.role === 'TECHNICIEN') {
+    const conditions: Prisma.interventionWhereInput[] = [];
 
-    return this.prisma.intervention.findMany({
-      where,
-      include: interventionInclude,
-      orderBy: {
-        idIntervention: 'desc',
-      },
-    });
+    if (user.idEquipe) {
+      conditions.push({
+        idEquipe: user.idEquipe,
+      });
+    }
+
+    if (user.idTechnicien) {
+      conditions.push({
+        affectation_technicien: {
+          some: {
+            idTechnicien: user.idTechnicien,
+          },
+        },
+      });
+    }
+
+    if (conditions.length === 0) {
+      return [];
+    }
+
+    where.OR = conditions;
   }
+
+  return this.prisma.intervention.findMany({
+    where,
+    include: interventionInclude,
+    orderBy: {
+      idIntervention: 'desc',
+    },
+  });
+}
 async getOperations(idIntervention: number) {
   const intervention = await this.prisma.intervention.findUnique({
     where: { idIntervention },

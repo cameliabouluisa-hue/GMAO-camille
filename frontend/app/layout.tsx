@@ -1,6 +1,7 @@
 import './globals.css';
-import Sidebar from '../components/sidebar';
+
 import { AuthProvider } from '@/context/AuthContext';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import LayoutWrapper from '@/components/LayoutWrapper';
 
 export const metadata = {
@@ -17,9 +18,9 @@ export default function RootLayout({
     <html lang="fr">
       <body className="min-h-screen bg-[#f4f7fb] text-slate-900">
         <AuthProvider>
-          <LayoutWrapper>
-            {children}
-          </LayoutWrapper>
+          <ProtectedRoute>
+            <LayoutWrapper>{children}</LayoutWrapper>
+          </ProtectedRoute>
         </AuthProvider>
       </body>
     </html>

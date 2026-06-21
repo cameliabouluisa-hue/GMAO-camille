@@ -24,8 +24,10 @@ import {
   getMateriels,
   restoreMateriel,
 } from '@/features/materiels/services/materiel.service';
-
+import { useAuth } from '@/context/AuthContext';
+import { Permission } from '@/types/auth';
 import type { Materiel } from '@/features/materiels/types/materiel';
+import PermissionRoute from '@/components/PermissionRoute';
 
 type ActifFilter = 'all' | 'true' | 'false';
 type StockFilter = 'TOUS' | 'GERE_STOCK' | 'NON_GERE_STOCK';
@@ -49,6 +51,8 @@ function isMaterielActif(materiel: Materiel) {
 }
 
 export default function MaterielsPage() {
+    const { hasPermission } = useAuth();
+
   const [materiels, setMateriels] = useState<Materiel[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
@@ -211,6 +215,8 @@ export default function MaterielsPage() {
   }
 
   return (
+      <PermissionRoute permission={Permission.MATERIEL_VIEW}>
+
     <main className="min-h-screen bg-[#f5f7fb] px-6 py-6">
       <section className="mx-auto max-w-[1450px] space-y-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -242,14 +248,17 @@ export default function MaterielsPage() {
               />
               Actualiser
             </button>
+            {hasPermission(Permission.MATERIEL_CREATE) && (
 
             <Link
+            
               href="/materiels/nouveau"
               className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#0b3d4f] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#082f3d]"
             >
               <Plus size={18} />
               Nouveau matériel
             </Link>
+            )}
           </div>
         </div>
 
@@ -454,11 +463,14 @@ export default function MaterielsPage() {
 
                             {materielActif && (
                               <>
+                              {hasPermission(Permission.MATERIEL_UPDATE) && (
                                 <ActionButton
                                   href={`/materiels/${materiel.idMateriel}/modifier`}
                                   icon={<Pencil size={16} />}
                                   label="Modifier"
                                 />
+                                        )}
+                                    {hasPermission(Permission.MATERIEL_DELETE) && (
 
                                 <button
                                   type="button"
@@ -476,10 +488,14 @@ export default function MaterielsPage() {
                                     <Trash2 size={16} />
                                   )}
                                 </button>
+                                        )}
+
                               </>
                             )}
 
-                            {!materielActif && (
+                               {!materielActif && hasPermission(Permission.MATERIEL_RESTORE) && (
+
+                              
                               <button
                                 type="button"
                                 disabled={isActionLoading}
@@ -509,6 +525,8 @@ export default function MaterielsPage() {
         </div>
       </section>
     </main>
+      </PermissionRoute>
+
   );
 }
 
@@ -695,7 +713,10 @@ function getText(value: unknown): string | null {
 }
 
 function EmptyState() {
+    const { hasPermission } = useAuth();
+
   return (
+
     <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
         <HardDrive size={24} />
@@ -710,6 +731,8 @@ function EmptyState() {
         équipements.
       </p>
 
+
+ {hasPermission(Permission.MATERIEL_CREATE) && (
       <Link
         href="/materiels/nouveau"
         className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#0b3d4f] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#082f3d]"
@@ -717,6 +740,7 @@ function EmptyState() {
         <Plus size={18} />
         Nouveau matériel
       </Link>
+      )}
     </div>
   );
 }

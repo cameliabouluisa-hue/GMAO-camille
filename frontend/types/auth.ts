@@ -223,21 +223,28 @@ export enum Permission {
   MANAGE_ROLES = 'ROLES_MANAGE',
   VIEW_REPORTS = 'REPORTS_VIEW',
 }
-
 export type User = {
   id: string;
+  idUtilisateur?: number;
   email: string;
+  nom?: string | null;
+  prenom?: string | null;
   fullName: string;
   role: UserRole;
+  roleLabel?: string;
   permissions: Permission[];
   avatar?: string | null;
+  actif?: boolean;
   createdAt?: string;
-  idUtilisateur?: number;
-nom?: string | null;
-prenom?: string | null;
-roleLabel?: string;
-actif?: boolean;
-derniereConnexion?: string | null;
+  dateCreation?: string;
+  derniereConnexion?: string | null;
+  idTechnicien?: number | null;
+idEquipe?: number | null;
+equipe?: {
+  idEquipe: number;
+  code: string;
+  libelle?: string | null;
+} | null;
 };
 
 export type LoginCredentials = {

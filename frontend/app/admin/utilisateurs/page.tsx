@@ -19,6 +19,8 @@ import { DataTableCard } from '@/components/data-table-card';
 import { EmptyState } from '@/components/empty-state';
 import { LoadingSpinner } from '@/components/loading-spinner';
 import { StatusBadge } from '@/components/status-badge';
+import PermissionRoute from '@/components/PermissionRoute';
+import { Permission } from '@/types/auth';
 
 interface User {
   id: string;
@@ -181,6 +183,8 @@ export default function UtilisateursPage() {
   };
 
   return (
+        <PermissionRoute permission={Permission.USERS_VIEW}>
+
     <main className="min-h-screen bg-[#f5f7fb] px-6 py-6">
       <section className="mx-auto max-w-[1450px] space-y-6">
         <PageHeader
@@ -375,5 +379,7 @@ export default function UtilisateursPage() {
         </DataTableCard>
       </section>
     </main>
+        </PermissionRoute>
+
   );
 }

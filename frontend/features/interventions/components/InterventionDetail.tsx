@@ -1,4 +1,4 @@
-'use client';
+
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -18,7 +18,8 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
-
+import { useAuth } from '@/context/AuthContext';
+import { Permission } from '@/types/auth';
 import { Select } from '@/components/select';
 import {
   AppFieldGrid,
@@ -139,9 +140,19 @@ export function InterventionDetail({
   onDeleteAffectationTechnicien,
   onFournituresDisponibles,
 }: Props) {
-  const [activeTab, setActiveTab] = useState<DetailTabId>('general');
-  const canModify = intervention.etat === 'EN_PREPARATION';
+ const [activeTab, setActiveTab] = useState<DetailTabId>('general');
 
+const { hasPermission } = useAuth();
+
+const canModify = intervention.etat === 'EN_PREPARATION';
+
+const canUpdateIntervention = hasPermission(Permission.INTERVENTION_UPDATE);
+const canAssignIntervention = hasPermission(Permission.INTERVENTION_UPDATE);
+const canManageExecution =
+  hasPermission(Permission.INTERVENTION_START) ||
+  hasPermission(Permission.INTERVENTION_COMPLETE);
+
+const canManageClose = hasPermission(Permission.INTERVENTION_CLOSE);
   const tabs = useMemo(
     () => [
       {
@@ -232,14 +243,14 @@ export function InterventionDetail({
             Actualiser
           </button>
 
-          {canModify && (
-            <Link
-              href={`/maintenance/interventions/${intervention.idIntervention}/modifier`}
-              className="inline-flex h-12 items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-[#06475a] shadow-sm transition hover:bg-slate-50"
-            >
-              Modifier
-            </Link>
-          )}
+         {canModify && canUpdateIntervention && (
+  <Link
+    href={`/maintenance/interventions/${intervention.idIntervention}/modifier`}
+    className="inline-flex h-12 items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-[#06475a] shadow-sm transition hover:bg-slate-50"
+  >
+    Modifier
+  </Link>
+)}
         </div>
       </div>
 
@@ -286,24 +297,26 @@ export function InterventionDetail({
         {activeTab === 'general' && <GeneralSection intervention={intervention} />}
 
         {activeTab === 'affectations' && (
-          <AffectationSection
-            intervention={intervention}
-            loading={actionLoading}
-            onAffecterEquipe={onAffecterEquipe}
-            onAffecterTechnicien={onAffecterTechnicien}
-            onDeleteAffectationTechnicien={onDeleteAffectationTechnicien}
-          />
+         <AffectationSection
+  intervention={intervention}
+  loading={actionLoading}
+  canManageAffectations={canAssignIntervention}
+  onAffecterEquipe={onAffecterEquipe}
+  onAffecterTechnicien={onAffecterTechnicien}
+  onDeleteAffectationTechnicien={onDeleteAffectationTechnicien}
+/>
         )}
 
         {activeTab === 'operations' && (
           <ListSkin>
             <OperationsSection
-              interventionEtat={intervention.etat}
-              operations={intervention.operation_intervention}
-              loading={actionLoading}
-              onCreate={onCreateOperation}
-              onDelete={onDeleteOperation}
-            />
+  interventionEtat={intervention.etat}
+  operations={intervention.operation_intervention}
+  loading={actionLoading}
+  canManageOperations={canUpdateIntervention}
+  onCreate={onCreateOperation}
+  onDelete={onDeleteOperation}
+/>
           </ListSkin>
         )}
 
@@ -527,12 +540,14 @@ function GeneralSection({ intervention }: { intervention: Intervention }) {
 function AffectationSection({
   intervention,
   loading,
+  canManageAffectations,
   onAffecterEquipe,
   onAffecterTechnicien,
   onDeleteAffectationTechnicien,
 }: {
   intervention: Intervention;
   loading: boolean;
+  canManageAffectations: boolean;
   onAffecterEquipe: (data: AffecterEquipeDto) => void | Promise<void>;
   onAffecterTechnicien: (data: AffecterTechnicienDto) => void | Promise<void>;
   onDeleteAffectationTechnicien: (
@@ -662,7 +677,9 @@ function AffectationSection({
 
   const etat = (intervention.etat || '').toUpperCase();
 
-  const canAffecter = [
+ const canAffecter =
+  canManageAffectations &&
+  [
     'EN_PREPARATION',
     'ATTENTE_VALIDATION',
     'VALIDEE',

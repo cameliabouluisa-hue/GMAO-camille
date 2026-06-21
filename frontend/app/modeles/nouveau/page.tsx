@@ -5,7 +5,19 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 
 import { ModeleForm, useModeleForm } from '@/features/modeles';
 import type { CreateModelePayload } from '@/features/modeles/types/modele';
-
+import PermissionRoute from '@/components/PermissionRoute';
+import { Permission } from '@/types/auth';
+function NouveauModelePermissionWrapper({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <PermissionRoute permission={Permission.MODELE_CREATE}>
+      {children}
+    </PermissionRoute>
+  );
+}
 export default function NouveauModelePage() {
   const router = useRouter();
 
@@ -22,8 +34,9 @@ export default function NouveauModelePage() {
   } = useModeleForm();
 
   if (loading) {
-    return (
-      <main className="min-h-screen bg-[#f5f7fb] px-6 py-8">
+   return (
+  <NouveauModelePermissionWrapper>
+    <main className="min-h-screen bg-[#f5f7fb] px-6 py-8">
         <div className="mx-auto flex min-h-[420px] max-w-[1180px] items-center justify-center">
           <div className="rounded-[24px] border border-slate-200 bg-white px-8 py-7 text-center shadow-sm">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eef7fa] text-[#06475a]">
@@ -40,12 +53,14 @@ export default function NouveauModelePage() {
             </p>
           </div>
         </div>
-      </main>
-    );
+         </main>
+  </NouveauModelePermissionWrapper>
+);
   }
 
   if (error) {
     return (
+      <NouveauModelePermissionWrapper>
       <main className="min-h-screen bg-[#f5f7fb] px-6 py-8">
         <div className="mx-auto max-w-[1180px]">
           <div className="rounded-[24px] border border-red-200 bg-red-50 px-6 py-5 shadow-sm">
@@ -75,10 +90,12 @@ export default function NouveauModelePage() {
           </div>
         </div>
       </main>
+      </NouveauModelePermissionWrapper>
     );
   }
 
   return (
+  <NouveauModelePermissionWrapper>
     <ModeleForm
       mode="create"
       familles={familles}
@@ -91,5 +108,6 @@ export default function NouveauModelePage() {
         await submitModele(payload as CreateModelePayload);
       }}
     />
-  );
+  </NouveauModelePermissionWrapper>
+);
 }
