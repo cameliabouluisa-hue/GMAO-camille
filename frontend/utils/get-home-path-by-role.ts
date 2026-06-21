@@ -14,7 +14,7 @@ export function getHomePathByRole(role?: UserRole | string | null) {
 
     case UserRole.TECHNICIEN:
     case 'TECHNICIEN':
-      return '/dashboards/equipements';
+      return '/dashboards/maintenance';
 
     case UserRole.DEMANDEUR:
     case 'DEMANDEUR':
